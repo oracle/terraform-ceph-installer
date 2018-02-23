@@ -1,0 +1,15 @@
+
+### Authentication
+export TF_VAR_tenancy_ocid=
+export TF_VAR_user_ocid=
+export TF_VAR_fingerprint=
+export TF_VAR_private_key_path=
+# Example: export TF_VAR_private_key_path=/root/.oraclebmc/bmcs_api_key.pem
+export TF_VAR_private_key_password=
+export TF_VAR_region=
+#Example: export TF_VAR_region=us-phoenix-1
+#Example: export TF_VAR_region=us-ashburn-1
+
+### Compartment/Region
+export TF_VAR_compartment_ocid=
+

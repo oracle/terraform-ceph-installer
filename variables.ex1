@@ -1,0 +1,257 @@
+
+#---------------------------------------------------------------
+# Environment Specific Variables
+#	- typcically defined in files like env-var
+#---------------------------------------------------------------
+variable "tenancy_ocid" { }
+
+variable "user_ocid" { }
+
+variable "fingerprint" { }
+
+variable "private_key_path" { }
+
+variable "private_key_password" { }
+
+variable "region" { }
+
+variable "compartment_ocid" { }
+
+#---------------------------------------------------------------
+# Variables used in this deployment - Common
+#---------------------------------------------------------------
+variable "ssh_public_key_file" {
+  description = "The public key that will be installed on to the new instance(s) for ssh login"
+  default = "/root/.ssh/id_rsa.pub"
+}
+
+variable "ssh_private_key_file" {
+  description = "The private key that for ssh login to the new instance(s)"
+  default = "/root/.ssh/id_rsa"
+}
+
+#---------------------------------------------------------------
+# Note:
+# Shapes like VM.Standard1.1 VM.Standard1.4 BM.Standard1.36 will need block storage
+# Shapes like VM.DenseIO1.4 BM.HighIO1.36 comes with NVMe SSD
+#---------------------------------------------------------------
+variable "instance_shapes" {
+  description = "The shapes of the instances. You can choose different shapes for deployer, monitor, osd, and client. But all instances of one type, e.g. monitor, will be the same."
+  default = {
+    "deployer" = "VM.Standard1.1"
+    "monitor" = "VM.Standard1.2"
+    "osd" = "VM.Standard1.4"
+    "client" = "VM.Standard1.2"
+  }
+}
+
+variable "create_volume" {
+  description = "Controls whether or not to create a block storage for the OSDs. Create if the value is set to true."
+  default = true
+}
+
+# Note: Specifiy the full display name of the OS. Just the name (e.g., Linux) and version (e.g., 7.4) doesn't guarantee a particular image that will be compatible with the instance
+variable "instance_os" {
+  description = "The Name of the Operating System for all instances"
+  default = "Oracle-Linux-7.4-2017.10.25-0"
+}
+
+variable "instance_create_timeout" {
+  description = "The timeout value for instance creation"
+  default = "60m"
+}
+
+variable "bashscript_directory" {
+    description = "The path to the bash script directory."
+    default = "modules/bashscripts"
+}
+
+variable "ssh_username" {
+    description = "The username for loging in via ssh to the VM. This is set by OCI."
+    default = "opc"
+}
+
+#---------------------------------------------------------------
+# Network related variables used in this deployment
+#---------------------------------------------------------------
+variable "create_new_vcn" {
+  description = "If true, a New VCN and Gateway will be created; If false, an existing VCN ID (in the same region) must be provided via the variable existing_vcn_id"
+  default = true
+}
+
+variable "existing_vcn_id" {
+  description = "If create_new_vcn is false, provide the id of an existing VCN to use"
+  default = [ "" ]
+}
+
+variable "vcn_cidr" {
+  description = "The CIDR for the new VCN (if created)"
+  default = "10.0.0.0/16"
+}
+
+variable "vcn_name" {
+  description = "The name for the new VCN (if created)"
+  default = "cephvcn"
+}
+
+variable "create_new_subnets" {
+  description = "If true, new subnets will be created; If false, existing subnet ids must be provided via the variable existing_subnet_ids"
+  default = true
+}
+
+variable "new_subnet_count" {
+  description = "The nubner of subnets to create"
+  default = 3
+}
+
+variable "existing_subnet_ids" {
+  description = "If create_new_subnets is false, provide the list of ids of existing subnets to use"
+  default = [ "" ]
+}
+
+variable "availability_domain_index_list_for_subnets" {
+  description = "Specifies the availability domain indexes for the subnets"
+  default = ["1", "2", "3"]
+}
+
+variable "gateway_name" {
+  description = "The name of the gateway for the new VCN (if created)"
+  default = "cephgw"
+}
+
+variable "route_table_name" {
+  description = "The name of the route table for the new VCN (if created)"
+  default = "cephrt"
+}
+
+variable "subnet_name_prefix" {
+  description = "The prefix for the subnet names"
+  default = "cephsub"
+}
+
+variable "subnet_cidr_blocks" {
+  description = "The CIDR for the new subnets(if created)"
+  default = [ "10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24" ]
+}
+
+#---------------------------------------------------------------
+# Ceph Deployer related variables used in this deployment
+#---------------------------------------------------------------
+variable "availability_domain_index_for_deployer" {
+  description = "The availability domain where the depolyer will be created"
+  default = [ "1" ]
+}
+
+variable "deployer_hostname" {
+  description = "The name of the deployer instances"
+  default = "ceph-deployer"
+}
+
+#---------------------------------------------------------------
+# Ceph Monitor related variables used in this deployment
+#---------------------------------------------------------------
+variable "monitor_instance_count" {
+  description = "The Number of Monitor to create"
+  default = "2"
+}
+
+variable "availability_domain_index_list_for_monitors" {
+  description = "The list for availability domains where the monitors will be created. The size of the list has to be at least equal to the number of monitor instances"
+  default = [ "1", "2", "3" ]
+}
+
+variable "monitor_hostname_prefix" {
+  description = "The prefix for the name of the monitor instances"
+  default = "ceph-monitor"
+}
+
+#---------------------------------------------------------------
+# Ceph OSD  related variables used in this deployment
+#---------------------------------------------------------------
+variable "osd_instance_count" {
+  description = "The Number of OSDs to create"
+  default = "4"
+}
+
+variable "num_object_replica" {
+  description = "The Number of Replication in Ceph"
+  default = "3"
+}
+
+variable "availability_domain_index_list_for_osds" {
+  description = "The availability domains where the OSDs will be created (as a list of indexes)"
+  default = [ "1", "2", "3", "1" ]
+}
+
+variable "osd_hostname_prefix" {
+  description = "The prefix to the name of the OSD instances. The name will be appended by an hyphen, followed by an integer starting at 0"
+  default = "ceph-osd"
+}
+
+variable "volume_name_prefix" {
+    description = "The prefix for the name of storage block volumes"
+    default = "ceph-volume"
+}
+
+variable "volume_size_in_gbs" {
+    description = "The size of storage block volumes"
+    default = "50"
+}
+
+variable "volume_attachment_type" {
+    description = "The type of volume attachments"
+    default = "iscsi"
+}
+
+variable "block_device_for_ceph" {
+    description = "The name of the block device to be used by Ceph. If volumes are created, it will be sdb. Otherwise nvme0n1"
+    default = [ "nvme0n1", "sdb" ]
+}
+
+#---------------------------------------------------------------
+# Variables used in this Ceph Client deployment
+#---------------------------------------------------------------
+variable "create_client" {
+  description = "Whether to create a client or not."
+  default =  true
+}
+
+variable "availability_domain_index_list_for_client" {
+  description = "The availability domain where the client will be created"
+  default = [ "2" ]
+}
+
+variable "client_hostname" {
+  description = "The prefix for the name of the monitor instances"
+  default = "ceph-client"
+}
+
+variable "rbd_name" {
+  description = "The name of the rbd"
+  default = "vol01"
+}
+
+variable "rbd_size" {
+  description = "The size of the rbd in MB"
+  default = "4096"
+}
+
+variable "datastore_name" {
+  description = "The name of the datastore"
+  default = "datastore"
+}
+
+variable "datastore_value" {
+  description = "The value of the datastore"
+  default = "150"
+}
+
+variable "filesystem_mount_point" {
+  description = "The mount point for the filesystem"
+  default = "/var/vol01"
+}
+
+variable "user_directoy_name" {
+  description = "The name of the user directory to be created"
+  default = "opc"
+}
