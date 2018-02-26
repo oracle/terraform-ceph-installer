@@ -3,8 +3,11 @@
 [oci provider]: https://github.com/oracle/terraform-provider-oci/releases
 [SSH key pair]: https://docs.us-phoenix-1.oraclecloud.com/Content/GSG/Tasks/creatingkeys.htm
 [API signing]: https://docs.us-phoenix-1.oraclecloud.com/Content/API/Concepts/apisigningkey.htm
+[yum terraform]: http://public-yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/terraform-0.11.3-1.el7.x86_64.rpm
+[yum oci provider]: http://public-yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/terraform-provider-oci-2.0.7-1.el7.x86_64.rpm
 
 # Ceph Installer for Oracle Cloud Infrastructure
+# Version: 1.0
 
 ## About
 
@@ -14,25 +17,25 @@ be used to provision and configure the resources needed to run a Ceph Storage Cl
 The infrastructure resources include:
 - Virtual Cloud Network (VCN) (optional)
 - Subnet (optional)
-- Compute instances for the Ceph Admin, Monitor, and OSD
+- Compute instances for the Ceph Admin, Monitor, and Object Storage Devices (OSDs)
 - Block Storage for the Compute Nodes (optional)
 
 ## Cluster Configuration Overview
 
-The exact configuration of the cluster is controlled by the variables defined in a Terraform script (such as variables.tf.)
+The exact configuration of the cluster is controlled by the variables defined in a Terraform script (such as variables.tf).
 There are three example files, variables.ex[1,2,3], which can be renamed variables.tf to create different configurations.
 By changing the values of those variables, one can decide:
-- wheather to create a new VCN or use an existing one
-- wheather to create subnet(s) or use existing one(s)
+- whether to create a new VCN or use an existing one
+- whether to create subnet(s) or use existing one(s)
 - the number and shapes of compute nodes for the Admin, Monitor, and OSD nodes
-- wheather to create Block Storage volumes for the OSDs
+- whether to create Block Storage volumes for the OSDs
 - the placement of the subnets and the compute nodes on the Availability Domains
 
 
 ### Example 1
 
 The configuration provided in this example will provision:
-- a VCN with a CIDR block of 10.0.0.0/16
+- a VCN with a Classless Inter-Domain Routing (CIDR) block of 10.0.0.0/16
 - three subnets with CIDR blocks of 10.0.1.0/24, 10.0.2.0/24, and 10.0.3.0/24 on availability domains 1, 2, and 3
 - a Compute instance with a shape of "VM.Standard1.1" for Ceph Admin / Deployer
 - a Compute instance with a shape of "VM.Standard1.2" for Ceph Monitors
@@ -46,7 +49,7 @@ It will then install the required Ceph components on various nodes and configure
 
 ### Example 2
 
-Similar to Example 1 but creates only 2 OSDs with replication level set to 2. It also uses compute nodes of shape "VM.DenseIO1.4" with NVMe, and therefore, doesn't create any block storage. It also doesn't create any client.
+Similar to Example 1 but creates only 2 OSDs with replication level set to 2. It also uses compute nodes of shape "VM.DenseIO1.4" with NVMe, and therefore, doesn't create any block storage. It also doesn't create any clients.
 
 ### Example 3
 
@@ -55,9 +58,9 @@ Similar to Example 1 but creates only 3 OSDs with replication level set to 3. It
 
 ## Prerequisites
 
-1. Download and install [Terraform][terraform] (v0.11.0 or later)
-2. Download and install the [OCI Terraform Provider][oci provider] (v2.0.4 or later)
-3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
+1. Download and install [Terraform RPM][yum terraform] or [Terraform][terraform] (v0.11.0 or later)
+2. Download and install the [OCI Terraform Provider RPM][yum oci provider] or [OCI Terraform Provider][oci provider] (v2.0.4 or later)
+3. Create a Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
 ```
 providers {
   oci = "<path_to_provider_binary>/terraform-provider-oci"
