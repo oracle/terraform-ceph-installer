@@ -33,16 +33,24 @@ resource "oci_core_instance" "instance" {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
   provisioner "file" {
-    source = "${var.bashscript_directory}/add_to_known_hosts.sh"
+    source = "${var.scripts_directory}/add_to_known_hosts.sh"
     destination = "~/add_to_known_hosts.sh"
   }
   provisioner "file" {
-    source = "${var.bashscript_directory}/add_to_etc_hosts.sh"
+    source = "${var.scripts_directory}/add_to_etc_hosts.sh"
     destination = "~/add_to_etc_hosts.sh"
   }
   provisioner "file" {
-    source = "${var.bashscript_directory}/installkey.sh"
+    source = "${var.scripts_directory}/installkey.sh"
     destination = "~/installkey.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/yum_repo_setup.sh"
+    destination = "~/yum_repo_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_yum_repo"
+    destination = "~/ceph_yum_repo"
   }
   connection {
     host = "${self.public_ip}"
@@ -92,7 +100,8 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "sudo yum-config-manager --enable ol7_ceph ol7_latest ol7_optional_latest ol7_addons >> ${local.output_filename}",
+      "chmod +x ~/yum_repo_setup.sh",
+      "~/yum_repo_setup.sh ${local.output_filename}",
       "sudo yum -y install ceph-deploy >> ${local.output_filename}",
     ]
   }

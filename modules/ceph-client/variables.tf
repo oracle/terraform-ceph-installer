@@ -55,8 +55,8 @@ variable "instance_create_timeout" {
   description = "The timeout value for instance creation"
 }
 
-variable "bashscript_directory" {
-  description = "Path to the directory where the bash scripts are"
+variable "scripts_directory" {
+  description = "Path to the directory where the scripts and config files are"
 }
 
 variable "rbd_name" {

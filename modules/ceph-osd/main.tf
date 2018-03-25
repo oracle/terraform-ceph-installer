@@ -33,6 +33,20 @@ resource "oci_core_instance" "instances" {
   metadata {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
+  provisioner "file" {
+    source = "${var.scripts_directory}/yum_repo_setup.sh"
+    destination = "~/yum_repo_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_yum_repo"
+    destination = "~/ceph_yum_repo"
+  }
+  connection {
+    host = "${self.public_ip}"
+    type = "ssh"
+    user = "${var.ssh_username}"
+    private_key = "${file(var.ssh_private_key_file)}"
+  }
   timeouts {
     create = "${var.instance_create_timeout}"
   }
@@ -70,7 +84,8 @@ resource "null_resource" "setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "sudo yum-config-manager --enable ol7_ceph ol7_latest ol7_optional_latest ol7_addons >> ${local.output_filename}",
+      "chmod +x ~/yum_repo_setup.sh",
+      "~/yum_repo_setup.sh  ${local.output_filename}",
       "sudo firewall-cmd --zone=public --add-port=6800-7300/tcp --permanent >> ${local.output_filename}",
       "sudo systemctl restart firewalld.service >> ${local.output_filename}"
     ]
@@ -91,7 +106,7 @@ resource "null_resource" "copy_key" {
   depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_setup"]
   count = "${var.instance_count}"
   provisioner "local-exec" {
-    command = "${var.bashscript_directory}/installkey.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
+    command = "${var.scripts_directory}/installkey.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
   }
 }
 

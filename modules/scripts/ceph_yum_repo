@@ -1,0 +1,14 @@
+
+[ol7_luminous_muislsm_dev]
+name=Ceph Luminous - Oracle Linux 7.2 or later ()
+baseurl=http://129.146.120.181/ceph/luminous/x86_64/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=0
+enabled =1
+
+[ol7_custom]
+name=Ceph Storage for Oracle Linux Release 2.0 - Oracle Linux 7.2 or later ($basearch)
+baseurl=http://yum.oracle.com/repo/OracleLinux/OL7/ceph/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=0

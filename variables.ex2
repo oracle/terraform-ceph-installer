@@ -61,9 +61,9 @@ variable "instance_create_timeout" {
   default = "60m"
 }
 
-variable "bashscript_directory" {
-    description = "The path to the bash script directory."
-    default = "modules/bashscripts"
+variable "scripts_directory" {
+    description = "The path to the scripts and config files directory."
+    default = "modules/scripts"
 }
 
 variable "ssh_username" {

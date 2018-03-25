@@ -20,7 +20,7 @@ variable "instance_count" {
 }
 
 variable "availability_domain_index_list" {
-  description = "The availability domains where the OSDs will be created (as a list of indexes)" 
+  description = "The availability domains where the OSDs will be created (as a list of indexes)"
   type = "list"
 }
 
@@ -33,8 +33,8 @@ variable "shape" {
 }
 
 variable "subnet_id_list" {
-  description = "The subnets where the OSDs will be created (as a list of indexes)" 
-  type = "list" 
+  description = "The subnets where the OSDs will be created (as a list of indexes)"
+  type = "list"
 }
 
 variable "ssh_public_key_file" {
@@ -58,8 +58,8 @@ variable "instance_create_timeout" {
 }
 
 variable "create_volume" {
-  description = "Controls whether or not to create a block storage. Create if the value is set to true." 
-  default = false 
+  description = "Controls whether or not to create a block storage. Create if the value is set to true."
+  default = false
 }
 
 variable "volume_name_prefix" {
@@ -74,8 +74,8 @@ variable "volume_attachment_type" {
   description = "The type of attachment to the instance. Currently, iscsi is the only option"
 }
 
-variable "bashscript_directory" {
-  description = "Path to the directory where the bash scripts are"
+variable "scripts_directory" {
+  description = "Path to the directory where the scripts and config files are"
 }
 
 variable "block_device_for_ceph" {

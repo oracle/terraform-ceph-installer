@@ -36,7 +36,7 @@ module "ceph_deployer" {
   ssh_private_key_file = "${var.ssh_private_key_file}"
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
-  bashscript_directory = "${var.bashscript_directory}"
+  scripts_directory = "${var.scripts_directory}"
 }
 
 #-------------------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ module "ceph_monitors" {
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
-  bashscript_directory = "${var.bashscript_directory}"
+  scripts_directory = "${var.scripts_directory}"
   deployer_setup = "${module.ceph_deployer.setup}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
 }
@@ -85,7 +85,7 @@ module "ceph_osds" {
   volume_name_prefix = "${var.volume_name_prefix}"
   volume_size_in_gbs = "${var.volume_size_in_gbs}"
   volume_attachment_type = "${var.volume_attachment_type}"
-  bashscript_directory = "${var.bashscript_directory}"
+  scripts_directory = "${var.scripts_directory}"
   block_device_for_ceph = "${var.block_device_for_ceph}"
   deployer_setup = "${module.ceph_deployer.setup}"
   new_cluster= "${module.ceph_monitors.new_cluster}"
@@ -109,7 +109,7 @@ module "ceph_client" {
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
-  bashscript_directory = "${var.bashscript_directory}"
+  scripts_directory = "${var.scripts_directory}"
   rbd_name = "${var.rbd_name}"
   rbd_size = "${var.rbd_size}"
   datastore_name = "${var.datastore_name}"
