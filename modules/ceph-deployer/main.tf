@@ -52,6 +52,18 @@ resource "oci_core_instance" "instance" {
     source = "${var.scripts_directory}/ceph_yum_repo"
     destination = "~/ceph_yum_repo"
   }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_new_cluster.sh"
+    destination = "~/ceph_new_cluster.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_deploy_osd.sh"
+    destination = "~/ceph_deploy_osd.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_deploy_osd.sh"
+    destination = "~/ceph_deploy_client.sh"
+  }
   connection {
     host = "${self.public_ip}"
     type = "ssh"
@@ -66,7 +78,7 @@ resource "oci_core_instance" "instance" {
 #------------------------------------------------------------------------------------
 # Setup the Ceph Deployer Instance
 #------------------------------------------------------------------------------------
-resource "null_resource" "setup" {
+resource "null_resource" "deploy" {
   depends_on = ["oci_core_instance.instance"]
   provisioner "remote-exec" {
     connection {
@@ -80,26 +92,11 @@ resource "null_resource" "setup" {
       "chmod +x ~/add_to_etc_hosts.sh",
       "chmod +x ~/add_to_known_hosts.sh",
       "chmod +x ~/installkey.sh",
+      "chmod +x ~/ceph_new_cluster.sh",
+      "chmod +x ~/ceph_deploy_osd.sh",
+      "chmod +x ~/ceph_deploy_client.sh",
       "rm -rf ~/.ssh/id_rsa",
       "ssh-keygen -t rsa -q -P '' -f ~/.ssh/id_rsa",
-    ]
-  }
-}
-
-#------------------------------------------------------------------------------------
-# Install ceph-deploy on the Ceph Deployer Instance
-#------------------------------------------------------------------------------------
-resource "null_resource" "deploy" {
-  depends_on = ["oci_core_instance.instance"]
-  provisioner "remote-exec" {
-    connection {
-      agent = false
-      timeout = "30m"
-      host = "${oci_core_instance.instance.public_ip}"
-      user = "${var.ssh_username}"
-      private_key = "${file(var.ssh_private_key_file)}"
-    }
-    inline = [
       "chmod +x ~/yum_repo_setup.sh",
       "~/yum_repo_setup.sh ${local.output_filename}",
       "sudo yum -y install ceph-deploy >> ${local.output_filename}",

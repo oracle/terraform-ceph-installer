@@ -80,14 +80,14 @@ resource "null_resource" "setup" {
 # Passwordless SSH Setup
 # - Get the ssh key from the Ceph Deployer Instance and install on the Monitors
 #------------------------------------------------------------------------------------
-resource "null_resource" "wait_for_deployer_setup" {
+resource "null_resource" "wait_for_deployer_deploy" {
   provisioner "local-exec" {
-    command = "echo 'Waited for Deployer Setup (${var.deployer_setup}) to complete'"
+    command = "echo 'Waited for Deployer Ceph Deployment (${var.deployer_deploy}) to complete'"
   }
 }
 
 resource "null_resource" "copy_key" {
-  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_setup"]
+  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_deploy"]
   count = "${var.instance_count}"
   provisioner "local-exec" {
     command = "${var.scripts_directory}/installkey.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.ceph_monitors.*.public_ip, count.index)}"
@@ -115,12 +115,6 @@ resource "null_resource" "add_to_deployer_known_hosts" {
 #------------------------------------------------------------------------------------
 # Create a new cluster
 #------------------------------------------------------------------------------------
-resource "null_resource" "wait_for_deployer_deploy" {
-  provisioner "local-exec" {
-    command = "echo 'Waited for Deployer Ceph Deployment (${var.deployer_deploy}) to complete'"
-  }
-}
-
 resource "null_resource" "create_new_cluster" {
   depends_on = ["null_resource.add_to_deployer_known_hosts", "null_resource.wait_for_deployer_deploy"]
   provisioner "remote-exec" {
@@ -132,36 +126,7 @@ resource "null_resource" "create_new_cluster" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "mkdir ceph-deploy",
-      "cd ceph-deploy",
-      "ceph-deploy new ${join(" ", oci_core_instance.ceph_monitors.*.hostname_label)}",
-      "echo osd pool default size = ${var.num_object_replica} >> ceph.conf",
-      "echo rbd default features = ${local.rbd_default_features} >> ceph.conf",
-      "ceph-deploy install ${join(" ", oci_core_instance.ceph_monitors.*.hostname_label)}",
-      "ceph-deploy mon create-initial",
-      "ceph-deploy mon create ${join(" ", oci_core_instance.ceph_monitors.*.hostname_label)}",
-      "ceph-deploy gatherkeys ${oci_core_instance.ceph_monitors.*.hostname_label[0]}"
+       "~/ceph_new_cluster.sh ${local.output_filename} ${var.num_object_replica} ${local.rbd_default_features} ${join(" ", oci_core_instance.ceph_monitors.*.hostname_label)}"
     ]
   }
 }
-
-#------------------------------------------------------------------------------------
-# Make the keyfiles at the server readable
-#------------------------------------------------------------------------------------
-resource "null_resource" "make_keyfile_readable_server" {
-  depends_on = ["null_resource.create_new_cluster"]
-  count = "${var.instance_count}"
-  provisioner "remote-exec" {
-    connection {
-      agent = false
-      timeout = "30m"
-      host = "${var.ceph_deployer_ip}"
-      user = "${var.ssh_username}"
-      private_key = "${file(var.ssh_private_key_file)}"
-    }
-    inline = [
-      "ssh -l opc ${var.hostname_prefix}-${count.index} sudo chmod +r /etc/ceph/ceph.client.admin.keyring"
-    ]
-  }
-}
-

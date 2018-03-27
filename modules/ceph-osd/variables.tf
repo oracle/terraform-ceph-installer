@@ -80,11 +80,11 @@ variable "scripts_directory" {
 
 variable "block_device_for_ceph" {
   description = "A list of the names for the block deivices that can be used for Ceph. Currently we use two values: 'sbd' for block storage and 'nvme0n1 for instances with NVMe SSDs"
-  type = "list" 
+  type = "list"
 }
 
-variable "deployer_setup" {
-  description = "A Synchronization primitive for letting TF know that the setup for the deployer is complete"
+variable "deployer_deploy" {
+  description = "A Synchronization primitive for letting TF know that the deployment for the deployer is complete"
 }
 
 variable "new_cluster" {

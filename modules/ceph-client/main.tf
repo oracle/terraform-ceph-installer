@@ -42,13 +42,16 @@ resource "oci_core_instance" "instance" {
     source = "${var.scripts_directory}/ceph_yum_repo"
     destination = "~/ceph_yum_repo"
   }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_client_setup.sh"
+    destination = "~/ceph_client_setup.sh"
+  }
   connection {
     host = "${self.public_ip}"
     type = "ssh"
     user = "${var.ssh_username}"
     private_key = "${file(var.ssh_private_key_file)}"
   }
-
   timeouts {
     create = "${var.instance_create_timeout}"
   }
@@ -70,6 +73,7 @@ resource "null_resource" "setup" {
     inline = [
       "chmod +x ~/yum_repo_setup.sh",
       "~/yum_repo_setup.sh  ${local.output_filename}",
+      "chmod +x ~/ceph_client_setup.sh",
       "sudo systemctl stop firewalld >> ${local.output_filename}",
       "sudo systemctl disable firewalld >> ${local.output_filename}",
     ]
@@ -80,16 +84,16 @@ resource "null_resource" "setup" {
 # Passwordless SSH Setup (from deployer to OSDs)
 # - Get the ssh key from the Ceph Deployer Instance and install on OSDs
 #------------------------------------------------------------------------------------
-resource "null_resource" "wait_for_deployer_setup" {
+resource "null_resource" "wait_for_deployer_deploy" {
   count = "${var.num_client}"
   provisioner "local-exec" {
-    command = "echo 'Waited for Deployer Setup (${var.deployer_setup}) to complete'"
+    command = "echo 'Waited for Deployer Setup (${var.deployer_deploy}) to complete'"
   }
 }
 
 resource "null_resource" "copy_key" {
   count = "${var.num_client}"
-  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_setup"]
+  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_deploy"]
   provisioner "local-exec" {
      command = "${var.scripts_directory}/installkey.sh ${var.ceph_deployer_ip} ${oci_core_instance.instance.public_ip}"
   }
@@ -121,7 +125,7 @@ resource "null_resource" "add_to_deployer_known_hosts" {
 resource "null_resource" "wait_for_cluster_create" {
   count = "${var.num_client}"
   provisioner "local-exec" {
-    command = "echo 'Waited for create new cluster ${var.new_cluster} to complete'"
+    command = "echo 'Waited for create new cluster ${var.new_cluster} creation'"
   }
 }
 
@@ -137,10 +141,7 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "cd ceph-deploy",
-      "ceph-deploy install ${oci_core_instance.instance.hostname_label}",
-      "ceph-deploy admin ${oci_core_instance.instance.hostname_label}",
-      "ssh -l opc ${oci_core_instance.instance.hostname_label} sudo chmod +r /etc/ceph/ceph.client.admin.keyring"
+      "~/ceph_deploy_client.sh ${local.output_filename} ${join(" ", oci_core_instance.instance.*.hostname_label)}"
      ]
   }
 }
@@ -149,34 +150,26 @@ resource "null_resource" "deploy" {
 # 1. Create the Rados block device
 # 2. Create a File System and mount on /var/vol01/opc
 #------------------------------------------------------------------------------------
-resource "null_resource" "wait_for_add_disk" {
+resource "null_resource" "wait_for_osd_deploy" {
   count = "${var.num_client}"
   provisioner "local-exec" {
-    command = "echo 'Waited for disk add on OSDs ${var.add_disk} to complete'"
+    command = "echo 'Waited for OSD deployment ${var.osd_deploy} to complete'"
   }
 }
 
 resource "null_resource" "create_rbd" {
-  depends_on = [ "null_resource.deploy", "null_resource.wait_for_add_disk" ]
+  depends_on = [ "null_resource.deploy", "null_resource.wait_for_osd_deploy" ]
   count = "${var.num_client}"
   provisioner "remote-exec" {
     connection {
       agent = false
       timeout = "30m"
-      host = "${oci_core_instance.instance.public_ip}"
+      host = "${element(oci_core_instance.instance.*.public_ip, count.index)}"
       user = "${var.ssh_username}"
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "ceph osd pool create ${var.datastore_name} ${var.datastore_value} ${var.datastore_value}",
-      "rbd create --size ${var.rbd_size} --pool ${var.datastore_name} ${var.rbd_name}",
-      "sudo rbd map ${var.rbd_name} --pool ${var.datastore_name}",
-      "sudo mkfs.ext4 -m0 /dev/rbd/${var.datastore_name}/${var.rbd_name}",
-      "sudo mkdir ${var.filesystem_mount_point}",
-      "sudo mount /dev/rbd/${var.datastore_name}/${var.rbd_name} ${var.filesystem_mount_point}",
-      "sudo mkdir ${var.filesystem_mount_point}/${var.user_directoy_name}",
-      "sudo chown opc ${var.filesystem_mount_point}/${var.user_directoy_name}",
-      "sudo chgrp opc ${var.filesystem_mount_point}/${var.user_directoy_name}",
+      "~/ceph_client_setup.sh ${local.output_filename} ${var.datastore_name} ${var.datastore_value} ${var.rbd_name} ${var.rbd_size} ${var.filesystem_mount_point} ${var.user_directoy_name} ${var.ssh_username}"
     ]
   }
 }

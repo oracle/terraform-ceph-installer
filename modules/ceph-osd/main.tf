@@ -96,14 +96,14 @@ resource "null_resource" "setup" {
 # Passwordless SSH Setup (from deployer to OSDs)
 # - Get the ssh key from the Ceph Deployer Instance and install on OSDs
 #------------------------------------------------------------------------------------
-resource "null_resource" "wait_for_deployer_setup" {
+resource "null_resource" "wait_for_deployer_deploy" {
   provisioner "local-exec" {
-    command = "echo 'Waited for Deployer Setup (${var.deployer_setup}) to complete'"
+    command = "echo 'Waited for Deployer Deploy(${var.deployer_deploy}) to complete'"
   }
 }
 
 resource "null_resource" "copy_key" {
-  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_setup"]
+  depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_deploy"]
   count = "${var.instance_count}"
   provisioner "local-exec" {
     command = "${var.scripts_directory}/installkey.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
@@ -122,8 +122,8 @@ resource "null_resource" "add_to_deployer_known_hosts" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/add_to_etc_hosts.sh ${element(oci_core_instance.instances.*.private_ip, count.index)} ${element(oci_core_instance.instances.*.hostname_label, count.index)}", 
-      "~/add_to_known_hosts.sh ${element(oci_core_instance.instances.*.private_ip, count.index)} ${element(oci_core_instance.instances.*.hostname_label, count.index)}", 
+      "~/add_to_etc_hosts.sh ${element(oci_core_instance.instances.*.private_ip, count.index)} ${element(oci_core_instance.instances.*.hostname_label, count.index)}",
+      "~/add_to_known_hosts.sh ${element(oci_core_instance.instances.*.private_ip, count.index)} ${element(oci_core_instance.instances.*.hostname_label, count.index)}",
      ]
   }
 }
@@ -148,29 +148,7 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "cd ceph-deploy",
-      "ceph-deploy install ${join(" ", oci_core_instance.instances.*.hostname_label)}"
-    ]
-  }
-}
-
-#------------------------------------------------------------------------------------
-# Add the disk on OSDs
-#------------------------------------------------------------------------------------
-resource "null_resource" "add_disk" {
-  depends_on = ["null_resource.deploy"]
-  count = "${var.instance_count}"
-  provisioner "remote-exec" {
-    connection {
-      agent = false
-      timeout = "30m"
-      host = "${var.ceph_deployer_ip}"
-      user = "${var.ssh_username}"
-      private_key = "${file(var.ssh_private_key_file)}"
-    }
-    inline = [
-      "cd ceph-deploy",
-      "ceph-deploy osd create --zap-disk --fs-type xfs ${var.hostname_prefix}-${count.index}:${element(var.block_device_for_ceph, var.create_volume)}"
+      "~/ceph_deploy_osd.sh ${local.output_filename} ${element(var.block_device_for_ceph, var.create_volume)} ${join(" ", oci_core_instance.instances.*.hostname_label)}"
     ]
   }
 }

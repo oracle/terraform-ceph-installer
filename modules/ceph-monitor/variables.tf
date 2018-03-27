@@ -63,10 +63,6 @@ variable "scripts_directory" {
   description = "Path to the directory where the scripts and config files are"
 }
 
-variable "deployer_setup" {
-  description = "A Synchronization primitive for letting TF know that the setup for the deployer is complete"
-}
-
 variable "deployer_deploy" {
   description = "A Synchronization primitive for letting TF know that the deployer has completed Ceph deploy"
 }

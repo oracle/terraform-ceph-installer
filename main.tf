@@ -59,7 +59,6 @@ module "ceph_monitors" {
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
   scripts_directory = "${var.scripts_directory}"
-  deployer_setup = "${module.ceph_deployer.setup}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
 }
 
@@ -87,7 +86,7 @@ module "ceph_osds" {
   volume_attachment_type = "${var.volume_attachment_type}"
   scripts_directory = "${var.scripts_directory}"
   block_device_for_ceph = "${var.block_device_for_ceph}"
-  deployer_setup = "${module.ceph_deployer.setup}"
+  deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster= "${module.ceph_monitors.new_cluster}"
 }
 
@@ -116,7 +115,7 @@ module "ceph_client" {
   datastore_value = "${var.datastore_value}"
   filesystem_mount_point = "${var.filesystem_mount_point}"
   user_directoy_name = "${var.user_directoy_name}"
-  deployer_setup = "${module.ceph_deployer.setup}"
+  deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster = "${module.ceph_monitors.new_cluster}"
-  add_disk = "${module.ceph_osds.add_disk}"
+  osd_deploy = "${module.ceph_osds.deploy}"
 }

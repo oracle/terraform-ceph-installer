@@ -32,7 +32,7 @@ variable "shape" {
 }
 
 variable "subnet_id" {
-  description = "The subnets where the instance will be created" 
+  description = "The subnets where the instance will be created"
 }
 
 variable "ssh_public_key_file" {
@@ -83,15 +83,15 @@ variable "user_directoy_name" {
   description = "The name of the user directory to be created"
 }
 
-variable "deployer_setup" {
-  description = "A Synchronization primitive for letting TF know that the setup for the deployer is complete"
+variable "deployer_deploy" {
+  description = "A Synchronization primitive for letting TF know that the deployment for the deployer is complete"
 }
 
 variable "new_cluster" {
   description = "A Synchronization primitive for letting TF know that the creation of the new cluster is complete"
 }
 
-variable "add_disk" {
-  description = "A Synchronization primitive for letting TF know that the addtion of disk at RBD is complete"
+variable "osd_deploy" {
+  description = "A Synchronization primitive for letting TF know that the OSD deployment is complete"
 }
 
