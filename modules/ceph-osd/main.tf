@@ -1,8 +1,3 @@
-
-locals {
-  output_filename = "/tmp/terraform.ceph-osd-exec.out"
-}
-
 #------------------------------------------------------------------------------------
 # Get a list of Availability Domains
 #------------------------------------------------------------------------------------
@@ -34,12 +29,24 @@ resource "oci_core_instance" "instances" {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/ceph.config"
+    destination = "~/ceph.config"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/vm_setup.sh"
+    destination = "~/vm_setup.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/yum_repo_setup.sh"
     destination = "~/yum_repo_setup.sh"
   }
   provisioner "file" {
     source = "${var.scripts_directory}/ceph_yum_repo"
     destination = "~/ceph_yum_repo"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_firewall_setup.sh"
+    destination = "~/ceph_firewall_setup.sh"
   }
   connection {
     host = "${self.public_ip}"
@@ -70,9 +77,9 @@ module "storage" {
 }
 
 #------------------------------------------------------------------------------------
-# Setup Ceph OSD Instances
+# Setup the VM
 #------------------------------------------------------------------------------------
-resource "null_resource" "setup" {
+resource "null_resource" "vm_setup" {
   depends_on = ["oci_core_instance.instances"]
   count = "${var.instance_count}"
   provisioner "remote-exec" {
@@ -84,10 +91,31 @@ resource "null_resource" "setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
+      "chmod +x ~/vm_setup.sh",
       "chmod +x ~/yum_repo_setup.sh",
-      "~/yum_repo_setup.sh  ${local.output_filename}",
-      "sudo firewall-cmd --zone=public --add-port=6800-7300/tcp --permanent >> ${local.output_filename}",
-      "sudo systemctl restart firewalld.service >> ${local.output_filename}"
+      "chmod +x ~/ceph_firewall_setup.sh",
+      "~/vm_setup.sh",
+    ]
+  }
+}
+
+#------------------------------------------------------------------------------------
+# Setup Ceph OSD Instances
+#------------------------------------------------------------------------------------
+resource "null_resource" "setup" {
+  depends_on = ["null_resource.vm_setup"]
+  count = "${var.instance_count}"
+  provisioner "remote-exec" {
+    connection {
+      agent = false
+      timeout = "30m"
+      host = "${element(oci_core_instance.instances.*.public_ip, count.index)}"
+      user = "${var.ssh_username}"
+      private_key = "${file(var.ssh_private_key_file)}"
+    }
+    inline = [
+      "~/yum_repo_setup.sh",
+      "~/ceph_firewall_setup.sh osd"
     ]
   }
 }
@@ -106,7 +134,7 @@ resource "null_resource" "copy_key" {
   depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_deploy"]
   count = "${var.instance_count}"
   provisioner "local-exec" {
-    command = "${var.scripts_directory}/installkey.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
+    command = "${var.scripts_directory}/install_ssh_key.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
   }
 }
 
@@ -148,7 +176,7 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/ceph_deploy_osd.sh ${local.output_filename} ${element(var.block_device_for_ceph, var.create_volume)} ${join(" ", oci_core_instance.instances.*.hostname_label)}"
+      "~/ceph_deploy_osd.sh ${element(var.block_device_for_ceph, var.create_volume)} ${join(" ", oci_core_instance.instances.*.hostname_label)}"
     ]
   }
 }

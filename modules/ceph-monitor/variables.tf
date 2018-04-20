@@ -1,4 +1,3 @@
-
 #===============================================================
 # Module Inputs
 #===============================================================
@@ -17,10 +16,6 @@ variable "instance_os" {
 
 variable "instance_count" {
   description = "The Number of Monitors to create"
-}
-
-variable "num_object_replica" {
-  description = "The Number of Replicas Ceph will maintain"
 }
 
 variable "availability_domain_index_list" { type = "list"

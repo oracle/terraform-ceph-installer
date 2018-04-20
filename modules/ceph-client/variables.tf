@@ -1,4 +1,3 @@
-
 #===============================================================
 # Module Inputs
 #===============================================================
@@ -59,30 +58,6 @@ variable "scripts_directory" {
   description = "Path to the directory where the scripts and config files are"
 }
 
-variable "rbd_name" {
-  description = "The name of the rbd"
-}
-
-variable "rbd_size" {
-  description = "The size of the rbd"
-}
-
-variable "datastore_name" {
-  description = "The name of the datastore"
-}
-
-variable "datastore_value" {
-  description = "The value of the datastore"
-}
-
-variable "filesystem_mount_point" {
-  description = "The mount point for the filesystem"
-}
-
-variable "user_directoy_name" {
-  description = "The name of the user directory to be created"
-}
-
 variable "deployer_deploy" {
   description = "A Synchronization primitive for letting TF know that the deployment for the deployer is complete"
 }
@@ -94,4 +69,3 @@ variable "new_cluster" {
 variable "osd_deploy" {
   description = "A Synchronization primitive for letting TF know that the OSD deployment is complete"
 }
-

@@ -1,8 +1,3 @@
-
-locals {
-  output_filename = "/tmp/terraform.ceph-deployer.out"
-}
-
 #------------------------------------------------------------------------------------
 # Get a list of Availability Domains
 #------------------------------------------------------------------------------------
@@ -33,6 +28,14 @@ resource "oci_core_instance" "instance" {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/ceph.config"
+    destination = "~/ceph.config"
+  }
+  provisioner "file" {
+    source = "${var.scripts_directory}/vm_setup.sh"
+    destination = "~/vm_setup.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/add_to_known_hosts.sh"
     destination = "~/add_to_known_hosts.sh"
   }
@@ -41,8 +44,8 @@ resource "oci_core_instance" "instance" {
     destination = "~/add_to_etc_hosts.sh"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/installkey.sh"
-    destination = "~/installkey.sh"
+    source = "${var.scripts_directory}/install_ssh_key.sh"
+    destination = "~/install_ssh_key.sh"
   }
   provisioner "file" {
     source = "${var.scripts_directory}/yum_repo_setup.sh"
@@ -53,6 +56,10 @@ resource "oci_core_instance" "instance" {
     destination = "~/ceph_yum_repo"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/install_ceph_deploy.sh"
+    destination = "~/install_ceph_deploy.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/ceph_new_cluster.sh"
     destination = "~/ceph_new_cluster.sh"
   }
@@ -61,7 +68,7 @@ resource "oci_core_instance" "instance" {
     destination = "~/ceph_deploy_osd.sh"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/ceph_deploy_osd.sh"
+    source = "${var.scripts_directory}/ceph_deploy_client.sh"
     destination = "~/ceph_deploy_client.sh"
   }
   connection {
@@ -76,9 +83,9 @@ resource "oci_core_instance" "instance" {
 }
 
 #------------------------------------------------------------------------------------
-# Setup the Ceph Deployer Instance
+# Setup the VM
 #------------------------------------------------------------------------------------
-resource "null_resource" "deploy" {
+resource "null_resource" "vm_setup" {
   depends_on = ["oci_core_instance.instance"]
   provisioner "remote-exec" {
     connection {
@@ -89,17 +96,38 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
+      "chmod +x ~/vm_setup.sh",
       "chmod +x ~/add_to_etc_hosts.sh",
       "chmod +x ~/add_to_known_hosts.sh",
-      "chmod +x ~/installkey.sh",
+      "chmod +x ~/install_ssh_key.sh",
+      "chmod +x ~/yum_repo_setup.sh",
+      "chmod +x ~/install_ceph_deploy.sh",
       "chmod +x ~/ceph_new_cluster.sh",
       "chmod +x ~/ceph_deploy_osd.sh",
       "chmod +x ~/ceph_deploy_client.sh",
+      "~/vm_setup.sh"
+    ]
+  }
+}
+
+#------------------------------------------------------------------------------------
+# Setup the Ceph Deployer Instance
+#------------------------------------------------------------------------------------
+resource "null_resource" "deploy" {
+  depends_on = ["null_resource.vm_setup"]
+  provisioner "remote-exec" {
+    connection {
+      agent = false
+      timeout = "30m"
+      host = "${oci_core_instance.instance.public_ip}"
+      user = "${var.ssh_username}"
+      private_key = "${file(var.ssh_private_key_file)}"
+    }
+    inline = [
       "rm -rf ~/.ssh/id_rsa",
       "ssh-keygen -t rsa -q -P '' -f ~/.ssh/id_rsa",
-      "chmod +x ~/yum_repo_setup.sh",
-      "~/yum_repo_setup.sh ${local.output_filename}",
-      "sudo yum -y install ceph-deploy >> ${local.output_filename}",
+      "~/yum_repo_setup.sh",
+      "~/install_ceph_deploy.sh"
     ]
   }
 }

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-outfile=/tmp/terraform_ceph_install.out
-
 if [ -f ceph.config ]; then
   do_vm_setup=$(awk -F= '/do_vm_setup/{print $2}' ceph.config)
   outfile=$(awk -F= '/outputfile_name/{print $2}' ceph.config)
@@ -12,14 +10,5 @@ if [ -f ceph.config ]; then
   fi
 fi
 
-(
-flock 200
-
-while [[ $# -gt 0 ]]
-do
-  echo "Adding: $1 to ~/.ssh/known_hosts"
-  ssh-keygen -R $1
-  ssh-keyscan $1 | grep ecdsa-sha2 >> ~/.ssh/known_hosts
-  shift
-done
-) 200>.tf_script_knownhost_lock
+ssh $1 -o "StrictHostKeyChecking no" -l opc 'cat ~/.ssh/id_rsa.pub' | ssh $2 -o "StrictHostKeyChecking no" -l opc 'cat >> .ssh/authorized_keys'
+sleep 5
