@@ -90,6 +90,30 @@ module "ceph_osds" {
 }
 
 #-------------------------------------------------------------------------------------------
+# Create and Setup the Ceph MDSs 
+#-------------------------------------------------------------------------------------------
+module "ceph_mds" {
+  source = "modules/ceph-mds/"
+  num_instances = "${var.mds_instance_count}"
+  tenancy_ocid = "${var.tenancy_ocid}"
+  compartment_ocid = "${var.compartment_ocid}"
+  instance_os = "${var.instance_os}"
+  availability_domain_index_list = "${var.availability_domain_index_list_for_mds}"
+  hostname_prefix= "${var.mds_hostname_prefix}"
+  shape = "${var.instance_shapes["mds"]}"
+  subnet_id_list = "${module.ceph_network.subnet_id_list}"
+  ssh_public_key_file = "${var.ssh_public_key_file}"
+  ssh_private_key_file = "${var.ssh_private_key_file}"
+  ssh_username = "${var.ssh_username}"
+  instance_create_timeout = "${var.instance_create_timeout}"
+  ceph_deployer_ip = "${module.ceph_deployer.ip}"
+  scripts_directory = "${var.scripts_directory}"
+  deployer_deploy = "${module.ceph_deployer.deploy}"
+  new_cluster = "${module.ceph_monitors.new_cluster}"
+  osd_deploy = "${module.ceph_osds.deploy}"
+}
+
+#-------------------------------------------------------------------------------------------
 # Create and Setup the Ceph Client
 #-------------------------------------------------------------------------------------------
 module "ceph_client" {

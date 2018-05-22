@@ -68,6 +68,10 @@ resource "oci_core_instance" "instance" {
     destination = "~/ceph_deploy_osd.sh"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/ceph_deploy_mds.sh"
+    destination = "~/ceph_deploy_mds.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/ceph_deploy_client.sh"
     destination = "~/ceph_deploy_client.sh"
   }
@@ -104,6 +108,7 @@ resource "null_resource" "vm_setup" {
       "chmod +x ~/install_ceph_deploy.sh",
       "chmod +x ~/ceph_new_cluster.sh",
       "chmod +x ~/ceph_deploy_osd.sh",
+      "chmod +x ~/ceph_deploy_mds.sh",
       "chmod +x ~/ceph_deploy_client.sh",
       "~/vm_setup.sh"
     ]

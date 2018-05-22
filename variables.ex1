@@ -206,6 +206,24 @@ variable "block_device_for_ceph" {
 }
 
 #---------------------------------------------------------------
+# Variables used in Ceph MDS deployment
+#---------------------------------------------------------------
+variable "mds_instance_count" {
+  description = "The Number of MDSs to create"
+  default = "1"
+}
+
+variable "availability_domain_index_list_for_mds" {
+  description = "The availability domain where the client will be created"
+  default = [ "1", "2", "3" ]
+}
+
+variable "mds_hostname_prefix" {
+  description = "The prefix for the name of the MDS instances"
+  default = "test-ceph-mds"
+}
+
+#---------------------------------------------------------------
 # Variables used in this Ceph Client deployment
 #---------------------------------------------------------------
 variable "create_client" {

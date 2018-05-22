@@ -31,6 +31,14 @@ output "ceph_osd_hostname_list" {
   value = "${module.ceph_osds.hostname_list}"
 }
 
+output "ceph_mds_ip_list" {
+  value = "${module.ceph_mds.ip_list}"
+}
+
+output "ceph_mds_hostname_list" {
+  value = "${module.ceph_mds.hostname_list}"
+}
+
 output "ceph_client_ip" {
   value = "${module.ceph_client.ip}"
 }
