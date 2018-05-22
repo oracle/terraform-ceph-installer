@@ -110,7 +110,6 @@ module "ceph_mds" {
   scripts_directory = "${var.scripts_directory}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster = "${module.ceph_monitors.new_cluster}"
-  osd_deploy = "${module.ceph_osds.deploy}"
 }
 
 #-------------------------------------------------------------------------------------------

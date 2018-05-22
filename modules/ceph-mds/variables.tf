@@ -19,7 +19,7 @@ variable "num_instances" {
 }
 
 variable "availability_domain_index_list" {
-  description = "The availability domain where the instance will be created" 
+  description = "The availability domain where the instance will be created"
   type = "list"
 }
 
