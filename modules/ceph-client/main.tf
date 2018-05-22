@@ -142,9 +142,8 @@ resource "null_resource" "add_to_deployer_known_hosts" {
 }
 
 #------------------------------------------------------------------------------------
-# 1. Deploy Ceph
-# 2. Make the client an admin node
-# 3. Make the keyfiles on the client readable
+# Deploy Ceph which includes installing the packages, making it an admin node,
+# install keyfiles, make them readable, etc.
 #------------------------------------------------------------------------------------
 resource "null_resource" "wait_for_cluster_create" {
   count = "${var.num_client}"
@@ -171,8 +170,7 @@ resource "null_resource" "deploy" {
 }
 
 #------------------------------------------------------------------------------------
-# 1. Create the Rados block device
-# 2. Create a File System and mount on /var/vol01/opc
+# Setup Clinet with block device, file Systems etc.
 #------------------------------------------------------------------------------------
 resource "null_resource" "wait_for_osd_deploy" {
   count = "${var.num_client}"
@@ -181,7 +179,7 @@ resource "null_resource" "wait_for_osd_deploy" {
   }
 }
 
-resource "null_resource" "create_rbd" {
+resource "null_resource" "client_setup" {
   depends_on = [ "null_resource.deploy", "null_resource.wait_for_osd_deploy" ]
   count = "${var.num_client}"
   provisioner "remote-exec" {

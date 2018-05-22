@@ -28,25 +28,9 @@ fi
 
 echo Executing $0 $* | tee -a $outfile
 
-client1_hostname=$1
 hostname_list=$*
 
 cd ceph-deploy
 ceph-deploy install $hostname_list | tee -a $outfile
 ceph-deploy config push $hostname_list | tee -a $outfile
 ceph-deploy mds create $hostname_list | tee -a $outfile
-
-#ceph-deploy admin $hostname_list | tee -a $outfile
-
-#ceph_version=`ceph -v | cut -d " " -f 3,3`
-#ceph_major_version=`echo $ceph_version | cut -d. -f 1,1`
-
-
-#for h in $hostname_list
-#do
-#  if [ $ceph_major_version -le 10 ]; then
-#    ssh -l opc $h sudo chmod +r /etc/ceph/ceph.client.admin.keyring | tee -a $outfile
-#  else
-#    ssh -l opc $h sudo chmod +r /etc/ceph/ceph.client.admin.keyring | tee -a $outfile
-#  fi
-#done
