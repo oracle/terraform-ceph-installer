@@ -77,13 +77,13 @@ resource "null_resource" "vm_setup" {
       "chmod +x ~/vm_setup.sh",
       "chmod +x ~/yum_repo_setup.sh",
       "chmod +x ~/ceph_firewall_setup.sh",
-      "~/vm_setup.sh",
+      "~/vm_setup.sh monitor"
     ]
   }
 }
 
 #------------------------------------------------------------------------------------
-# Setup Ceph Monitor Instances
+# Setup Yum Repository
 #------------------------------------------------------------------------------------
 resource "null_resource" "setup" {
   depends_on = ["null_resource.vm_setup"]
@@ -98,7 +98,7 @@ resource "null_resource" "setup" {
     }
     inline = [
       "~/yum_repo_setup.sh",
-      "~/ceph_firewall_setup.sh monitor",
+      "~/ceph_firewall_setup.sh monitor"
     ]
   }
 }

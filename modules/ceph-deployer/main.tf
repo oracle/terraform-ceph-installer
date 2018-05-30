@@ -56,6 +56,10 @@ resource "oci_core_instance" "instance" {
     destination = "~/ceph_yum_repo"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/ceph_firewall_setup.sh"
+    destination = "~/ceph_firewall_setup.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/install_ceph_deploy.sh"
     destination = "~/install_ceph_deploy.sh"
   }
@@ -105,12 +109,13 @@ resource "null_resource" "vm_setup" {
       "chmod +x ~/add_to_known_hosts.sh",
       "chmod +x ~/install_ssh_key.sh",
       "chmod +x ~/yum_repo_setup.sh",
+      "chmod +x ~/ceph_firewall_setup.sh",
       "chmod +x ~/install_ceph_deploy.sh",
       "chmod +x ~/ceph_new_cluster.sh",
       "chmod +x ~/ceph_deploy_osd.sh",
       "chmod +x ~/ceph_deploy_mds.sh",
       "chmod +x ~/ceph_deploy_client.sh",
-      "~/vm_setup.sh"
+      "~/vm_setup.sh deployer"
     ]
   }
 }
@@ -132,6 +137,7 @@ resource "null_resource" "deploy" {
       "rm -rf ~/.ssh/id_rsa",
       "ssh-keygen -t rsa -q -P '' -f ~/.ssh/id_rsa",
       "~/yum_repo_setup.sh",
+      "~/ceph_firewall_setup.sh deployer",
       "~/install_ceph_deploy.sh"
     ]
   }

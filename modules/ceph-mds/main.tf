@@ -1,7 +1,6 @@
 #------------------------------------------------------------------------------------
 # Get a list of Availability Domains
 #------------------------------------------------------------------------------------
-
 data "oci_identity_availability_domains" "ADs" {
   compartment_id = "${var.tenancy_ocid}"
 }
@@ -45,6 +44,10 @@ resource "oci_core_instance" "instance" {
     source = "${var.scripts_directory}/ceph_yum_repo"
     destination = "~/ceph_yum_repo"
   }
+  provisioner "file" {
+    source = "${var.scripts_directory}/ceph_firewall_setup.sh"
+    destination = "~/ceph_firewall_setup.sh"
+  }
   connection {
     host = "${self.public_ip}"
     type = "ssh"
@@ -57,7 +60,7 @@ resource "oci_core_instance" "instance" {
 }
 
 #------------------------------------------------------------------------------------
-# Setup MDS VM Instance Setup 
+# Setup MDS VM Instance Setup
 #------------------------------------------------------------------------------------
 resource "null_resource" "vm_setup" {
   depends_on = ["oci_core_instance.instance"]
@@ -73,14 +76,14 @@ resource "null_resource" "vm_setup" {
     inline = [
       "chmod +x ~/vm_setup.sh",
       "chmod +x ~/yum_repo_setup.sh",
-      #"chmod +x ~/ceph_mds_setup.sh",
-      "~/vm_setup.sh"
+      "chmod +x ~/ceph_firewall_setup.sh",
+      "~/vm_setup.sh mds"
     ]
   }
 }
 
 #------------------------------------------------------------------------------------
-# Setup Ceph MDS Instances
+# Setup Ceph Repo
 #------------------------------------------------------------------------------------
 resource "null_resource" "setup" {
   depends_on = ["null_resource.vm_setup"]
@@ -94,7 +97,8 @@ resource "null_resource" "setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/yum_repo_setup.sh"
+      "~/yum_repo_setup.sh",
+      "~/ceph_firewall_setup.sh mds"
     ]
   }
 }
@@ -131,16 +135,14 @@ resource "null_resource" "add_to_deployer_known_hosts" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/add_to_etc_hosts.sh ${oci_core_instance.instance.public_ip} ${oci_core_instance.instance.hostname_label}",
-      "~/add_to_known_hosts.sh ${oci_core_instance.instance.public_ip} ${oci_core_instance.instance.hostname_label}"
+      "~/add_to_etc_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}",
+      "~/add_to_known_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}"
     ]
   }
 }
 
 #------------------------------------------------------------------------------------
-# 1. Deploy Ceph
-# 2. Make the client an admin node
-# 3. Make the keyfiles on the client readable
+# Deploy the package and configure from the ceph deployer
 #------------------------------------------------------------------------------------
 resource "null_resource" "wait_for_cluster_create" {
   count = "${var.num_instances}"

@@ -3,8 +3,8 @@
 outfile=/tmp/terraform_ceph_install.out
 
 if [ -f ceph.config ]; then
-  do_ceph_install=$(awk -F= '/do_ceph_install/{print $2}' ceph.config)
-  outfile=$(awk -F= '/outputfile_name/{print $2}' ceph.config)
+  do_ceph_install=$(awk -F= '/^do_ceph_install/{print $2}' ceph.config)
+  outfile=$(awk -F= '/^outputfile_name/{print $2}' ceph.config)
   if [ "$do_ceph_install" != "yes" ]; then
     echo Ceph installation is not done | tee -a $outfile
     echo Skipping ... \[ At host: $(hostname) \] $0 $* | tee -a $outfile
@@ -24,6 +24,8 @@ print_usage()
 if [ $# -lt 2 ];then
   print_usage
 fi
+
+echo Executing $0 $* | tee -a $outfile
 
 device_name=$1
 shift

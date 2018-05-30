@@ -7,12 +7,12 @@ pool_page_num=128
 pool_pgp_num=128
 
 if [ -f ceph.config ]; then
-  do_ceph_install=$(awk -F= '/do_ceph_install/{print $2}' ceph.config)
-  outfile=$(awk -F= '/outputfile_name/{print $2}' ceph.config)
-  num_object_replica=$(awk -F= '/num_object_replica/{print $2}' ceph.config)
-  rbd_default_features=$(awk -F= '/rbd_default_features/{print $2}' ceph.config)
-  pool_page_num=$(awk -F= '/pool_page_num/{print $2}' ceph.config)
-  pool_pgp_num=$(awk -F= '/pool_pgp_num/{print $2}' ceph.config)
+  do_ceph_install=$(awk -F= '/^do_ceph_install/{print $2}' ceph.config)
+  outfile=$(awk -F= '/^outputfile_name/{print $2}' ceph.config)
+  num_object_replica=$(awk -F= '/^num_object_replica/{print $2}' ceph.config)
+  rbd_default_features=$(awk -F= '/^rbd_default_features/{print $2}' ceph.config)
+  pool_page_num=$(awk -F= '/^pool_page_num/{print $2}' ceph.config)
+  pool_pgp_num=$(awk -F= '/^pool_pgp_num/{print $2}' ceph.config)
   if [ "$do_ceph_install" != "yes" ]; then
     echo Ceph installation is not done | tee -a $outfile
     echo Skipping ... \[ At host: $(hostname) \] $0 $* | tee -a $outfile
@@ -34,9 +34,10 @@ if [ $# -lt 1 ];then
   print_usage
 fi
 
+echo Executing $0 $* | tee -a $outfile
+
 monitor1_hostname=$1
 hostname_list=$*
-
 
 mkdir ceph-deploy
 cd ceph-deploy
@@ -58,10 +59,7 @@ if [ $ceph_major_version -le 10 ]; then
   done
 else
   echo osd pool default size = $num_object_replica | tee -a ceph.conf
-  echo rbd default features = $rbd_default_features | tee -a ceph.conf
   echo mon_allow_pool_delete = true | tee -a ceph.conf
-  echo osd pool default pg num = $pool_page_num  | tee -a ceph.conf
-  echo osd pool default pgp num = $pool_pgp_num  | tee -a ceph.conf
   ceph-deploy --overwrite-conf mon create-initial | tee -a $outfile
   ceph-deploy --overwrite-conf admin $(hostname) | tee -a $outfile
   sudo chmod +r /etc/ceph/ceph.client.admin.keyring | tee -a $outfile

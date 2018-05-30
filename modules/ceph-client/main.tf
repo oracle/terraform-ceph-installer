@@ -46,6 +46,10 @@ resource "oci_core_instance" "instance" {
     destination = "~/ceph_yum_repo"
   }
   provisioner "file" {
+    source = "${var.scripts_directory}/ceph_firewall_setup.sh"
+    destination = "~/ceph_firewall_setup.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_directory}/ceph_client_setup.sh"
     destination = "~/ceph_client_setup.sh"
   }
@@ -77,8 +81,9 @@ resource "null_resource" "vm_setup" {
     inline = [
       "chmod +x ~/vm_setup.sh",
       "chmod +x ~/yum_repo_setup.sh",
+      "chmod +x ~/ceph_firewall_setup.sh",
       "chmod +x ~/ceph_client_setup.sh",
-      "~/vm_setup.sh",
+      "~/vm_setup.sh client",
     ]
   }
 }
@@ -99,6 +104,7 @@ resource "null_resource" "setup" {
     }
     inline = [
       "~/yum_repo_setup.sh",
+      "~/ceph_firewall_setup.sh client"
     ]
   }
 }

@@ -3,14 +3,16 @@
 outfile=/tmp/terraform_ceph_install.out
 
 if [ -f ceph.config ]; then
-  do_ceph_install=$(awk -F= '/do_ceph_install/{print $2}' ceph.config)
-  outfile=$(awk -F= '/outputfile_name/{print $2}' ceph.config)
+  do_ceph_install=$(awk -F= '/^do_ceph_install/{print $2}' ceph.config)
+  outfile=$(awk -F= '/^outputfile_name/{print $2}' ceph.config)
   if [ "$do_ceph_install" != "yes" ]; then
     echo Ceph installation is not done | tee -a $outfile
     echo Skipping ... \[ At host: $(hostname) \] $0 $* | tee -a $outfile
     exit
   fi
 fi
+
+echo Executing $0 $* | tee -a $outfile
 
 sudo yum -y install ceph-deploy | tee -a $outfile
 ceph-deploy install $(hostname)
