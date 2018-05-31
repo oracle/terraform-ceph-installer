@@ -1,123 +1,182 @@
 [terraform]: https://terraform.io
+[oracle linux]: https://www.oracle.com/linux/index.html
+[ceph]: https://ceph.com/
+[ceph rel note]: https://docs.oracle.com/cd/E52668_01/E66514/E66514.pdf
 [OCI]: https://cloud.oracle.com/cloud-infrastructure
 [oci provider]: https://github.com/oracle/terraform-provider-oci/releases
 [SSH key pair]: https://docs.us-phoenix-1.oraclecloud.com/Content/GSG/Tasks/creatingkeys.htm
 [API signing]: https://docs.us-phoenix-1.oraclecloud.com/Content/API/Concepts/apisigningkey.htm
 [yum terraform]: http://public-yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/terraform-0.11.3-1.el7.x86_64.rpm
 [yum oci provider]: http://public-yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/terraform-provider-oci-2.0.7-1.el7.x86_64.rpm
+[ocids and keys]: https://docs.us-phoenix-1.oraclecloud.com/Content/API/Concepts/apisigningkey.htm
 
-# Ceph Installer for Oracle Cloud Infrastructure
-# Version: 1.0
+# Terraform Installer for Ceph in Oracle Cloud Infrastructure
+# Version: 1.1
 
 ## About
 
-The Ceph Installer for Oracle Cloud Infrastructure provides a Terraform-based Ceph Cluster installation for Oracle
-Cloud Infrastructure. It consists of a set of [Terraform][terraform] scripts and modules and three example configurations that can
-be used to provision and configure the resources needed to run a Ceph Storage Cluster on [Oracle Cloud Infrastructure][OCI] (OCI).
-The infrastructure resources include:
-- Virtual Cloud Network (VCN) (optional)
-- Subnet (optional)
-- Compute instances for the Ceph Admin, Monitor, and Object Storage Devices (OSDs)
-- Block Storage for the Compute Nodes (optional)
+[Ceph][ceph] is an open source distributed storage system designed for performance, reliability and scalability.
+It provides interfaces for object, block, and file-level storage.
+Ceph is now widely used and fully supported on [Oracle Linux][oracle linux] as described in the [Release Notes for Ceph Storage for Oracle Linux Release 2.0][ceph rel note].
 
-## Cluster Configuration Overview
+[Terraform][terraform] is an Open Source Software (OSS) for building, changing, and versioning Cloud infrastructure safely and efficiently.
+[Terraform Provider for OCI][oci provider] allows one to create the necessary Infrastructure resources and configure them in OCI.
 
-The exact configuration of the cluster is controlled by the variables defined in a Terraform script (such as variables.tf).
-There are three example files, variables.ex[1,2,3], which can be renamed variables.tf to create different configurations.
-By changing the values of those variables, one can decide:
-- whether to create a new VCN or use an existing one
-- whether to create subnet(s) or use existing one(s)
-- the number and shapes of compute nodes for the Admin, Monitor, and OSD nodes
-- whether to create Block Storage volumes for the OSDs
-- the placement of the subnets and the compute nodes on the Availability Domains
+The Terraform Installer for Ceph provides Terraform scripts for installing Ceph Clusters in [Oracle Cloud Infrastructure][OCI] (OCI).
+It consists of a set of Terraform scripts and modules, bash scripts, and example configurations that can
+be used to provision and configure the resources needed to run a Ceph Storage Cluster on OCI.
+
+Using the scripts in this repository, you can streamline and/or replicate your Ceph deployment in Oracle Cloud Infrastructure (OCI).
+
+## Ceph Cluster Configuration Overview
+
+A typical Ceph Cluster includes multiple virtual or bare metal machines, referred to as nodes, serving one (or more) of the following:
+- Deployer - for installing Ceph on all other nodes
+- Monitors - for maintaining the maps of the cluster state and  authentication
+- Managers - for keeping track of the cluster state and exposing the cluster information
+- Object Storage Daemons (OSDs) - for storing and handling data
+- Metadata Server (MDS) - for storing metadata on behalf of the Ceph Filesystem
+
+Deploying Ceph includes creating infrastructure resources (e.g., compute, network, storage), setting them up for Ceph installation, installing various packages on all machines,
+and finally configuring and deploying the cluster. This requires a fair bit of knowledge about OCI and Ceph. Carrying out the entire process manually is tedious and error prone.
+
+However, by using the sctipts in this repository, you can create the necessary infrastructure resources and deploy a Ceph cluster using those resources.
+The behavior of the scripts are controlled by various configuration files. By changing the variables defined in these files, you can control what resources are created in OCI
+(e.g., the number and type of VMs to create for various Ceph nodes), how the Ceph Cluster is configured (e.g., the level of replication), etc.
 
 
-### Example 1
+## Creating a Ceph Cluster
 
-The configuration provided in this example will provision:
-- a VCN with a Classless Inter-Domain Routing (CIDR) block of 10.0.0.0/16
-- three subnets with CIDR blocks of 10.0.1.0/24, 10.0.2.0/24, and 10.0.3.0/24 on availability domains 1, 2, and 3
-- a Compute instance with a shape of "VM.Standard1.1" for Ceph Admin / Deployer
-- a Compute instance with a shape of "VM.Standard1.2" for Ceph Monitors
-- a Compute instance with a shape of "VM.Standard1.1" for Ceph OSDs
-- a Compute instance with a shape of "VM.Standard1.2" as Ceph Client (for testing purposes)
-- Block Storages for each of the OSDs
+This README guides you through the following steps to accomplish the goal of creating a cluster shown in the pcture below:
 
-It will then install the required Ceph components on various nodes and configure them. The client node will have a file system created over the Ceph block devices and mounted on /var/vol101. The 'opc' directory under /var/vol101 will have the read and write permissions for the user 'opc'.
+- Install Terraform
+- Download the scripts
+- Setup for access to OCI
+- Customize the Ceph Cluster
+- Execute the scripts
+- Login to a Ceph Admin node and check the status of the Cluster
 
 ![](./deployment.gif)
 
-### Example 2
+### Prerequisites
+Designate a machine to run Terraform. This machine needs to have the credentials (e.g., the .pem key files under ~/.oci) to access the your tenant in OCI.
 
-Similar to Example 1 but creates only 2 OSDs with replication level set to 2. It also uses compute nodes of shape "VM.DenseIO1.4" with NVMe, and therefore, doesn't create any block storage. It also doesn't create any clients.
+This machine should also have the rsa key pair generated for the Linux user on this machine.
+This key will be supplied during the creation of the compute nodes to allow the Linux user to perform password-less ssh logins the newly created VMs.
 
-### Example 3
-
-Similar to Example 1 but creates only 3 OSDs with replication level set to 3. It also uses compute nodes of shape "BM.HighIO1.36" with NVMe, and therefore, doesn't create any block storage.
-
-
-## Prerequisites
-
-1. Download and install [Terraform RPM][yum terraform] or [Terraform][terraform] (v0.11.0 or later)
-2. Download and install the [OCI Terraform Provider RPM][yum oci provider] or [OCI Terraform Provider][oci provider] (v2.0.4 or later)
-3. Create a Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
+If not, generate the key pair using:
 ```
-providers {
-  oci = "<path_to_provider_binary>/terraform-provider-oci"
-}
+$ ssh-keygen -t rsa
 ```
-4. Export the environment related variables. Go to the project root directory, make a copy of the env-vars.sample, add the appropriate values that
-specifies your [API signature](API signing), tenancy, user, and compartment within OCI, and source it:
-```bash
-$ cd terraform-modules/ceph-cluster
+### Install Terraform
+Add and/or enable the following yum repository:
+```
+[ol7_developer]
+name=Oracle Linux $releasever Development Packages ($basearch)
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/developer/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1
+```
+Then execute:
+```
+$ yum install terraform
+$ yum install terraform-provider_oci
+```
+### Download Scripts
+Download the Terraform Ceph scripts from this repository.
+```
+$ git clone https://github.com/oracle/terraform-ceph-installer.git
+$ cd terraform-ceph-installer
+```
+### Setup for access to your OCI tenant
+Copy and edit the sample environment file to fill in the information particular to your tenancy which includes the tenant, region, user id, and the credentials to access OCI.
+This is the same information you would require to use the OCI-CLI. Please refer to [Required Keys and OCIDs][ocids and keys] to find out the OCIDs and generate the keys needed.
+
+Source it to export the variables in the file.
+```
 $ cp env-vars.sample env-vars
-# Edit the env-vars file.
+$ vi env-vars
 $ . env-vars
 ```
 
-5. Start from one of the included examples (e.g., variables.ex1)
-```bash
+### Customize for your OCI tenant
+Create a copy (with a .tf extension) of one of the given examples and modify to fit your need and your environment.
+The example in variables.ex1 assumes that have existing VCN and subnets for your tenant in OCI and
+you deploy the cluster using those subnets.
+```
 $ cp variables.ex1 variables.tf
 ```
+Edit (if necessary) the following variables:
+instance_shapes - The shapes for the compute resources. You can use different shapes for the deployer, monitor, osd, and client but can only assign one shape for all monitors or OSDs. Change any shapes if not available in your environment.
+instance_os - The full name of the operating system as displayed when you list them. You will probably need to update it as the OS version is updated frequently in OCI. Follow the same format included as example.
+existing_vcn_id - The ocid for the existing VCN. You can find it by login into you tenant using a browser.
+existing_subnet_ids - The list of ocids for the existing subnets. You can find them by login into you tenant using a browser.
 
-## Quick start
-
-```bash
-# Initialize your Terraform configuration including the modules
-$ terraform init
-
-# Optionally customize the deployment by overriding input variable defaults in `variables.tf` as you see fit
-# Edit variables.tf
-
-# See what Terraform will do before actually doing it
-$ terraform plan
-
-# Provision resources and configure the Ceph cluster on OCI
-$ terraform apply
+Create a link for the network module
+```
+ln -s network.partial modules/network
 ```
 
-The Ceph cluster will be running after the configuration is applied successfully and the cluster installation
-scripts have been given time to finish asynchronously. Typically this takes around 13 minutes after `terraform apply`
-and will vary depending on the instance counts and shapes.
+### Execute Scripts
+```
+# Initialize your Terraform configuration including the modules
+$ terraform init
+# See what Terraform will do before actually doing it
+$ terraform plan
+# Provision resources and configure the Ceph cluster on OCI
+$ terraform apply
+### Check Cluster Status
+```
 
-It will print out the IP addresses for all the compute nodes. The IP addresses will be required to access the nodes. If at any point you need to list the IP addresses again just type:
-```bash
+Upon the successful completion, the scripts will print out the names and IP addresses for all the compute nodes which can then be used to access the nodes.
+The tail end of the output will look like the following:
+
+```
+Outputs:
+ceph_client_hostname = [
+    test-ceph-client
+]
+ceph_client_ip = [
+    100.100.45.31
+]
+ceph_deployer_hostname = test-ceph-deployer
+ceph_deployer_ip = 100.100.45.30
+ceph_monitor_hostname_list = [
+    test-ceph-monitor-0,
+    test-ceph-monitor-1
+]
+ceph_monitor_ip_list = [
+    100.100.45.33,
+    100.100.46.30
+]
+ceph_osd_hostname_list = [
+    test-ceph-osd-0,
+    test-ceph-osd-1,
+    test-ceph-osd-2
+]
+ceph_osd_ip_list = [
+    100.100.45.32,
+    100.100.46.31,
+    100.100.48.30
+]
+```
+
+If you need to list the IP addresses again in the future, enter:
+```
 $ terraform show
 ```
 
-#### Access one of the Ceph Monitors and view the status of Ceph Cluster
 
-```bash
-$ ssh -l opc <monitor-ip-address>
-$ ceph status
-```
+### Check the status of the Cluster
 
-#### Access the Ceph Client and check for the filesystem
 ```bash
 $ ssh -l opc <client-ip-address>
+$ ceph status
 $ df -h
 ```
 
 ## Known issues and limitations
 * Terraform doesn't check for any inconsistencies among various input variables. For example, it will fail if the specified subnet id for a compute node doesn't belong to the specified availability domain for the same node. It is your responsibility to make sure the inputs are consistent with one another.
 * Use all lowercase for names of resources. Names with uppercase letters on network resources may cause problems.
+
