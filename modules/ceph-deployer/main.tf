@@ -21,9 +21,12 @@ resource "oci_core_instance" "instance" {
   compartment_id = "${var.compartment_ocid}"
   display_name = "${var.hostname}"
   hostname_label = "${var.hostname}"
-  image = "${lookup(data.oci_core_images.image_ocid.images[0], "id")}"
   shape = "${var.shape}"
   subnet_id = "${var.subnet_id}"
+  source_details {
+    source_type = "image"
+    source_id = "${lookup(data.oci_core_images.image_ocid.images[0], "id")}"
+  }
   metadata {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
