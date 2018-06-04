@@ -1,6 +1,6 @@
 
 output "ip_list" {
-  value = "${oci_core_instance.ceph_monitors.*.public_ip}"
+  value = "${oci_core_instance.ceph_monitors.*.private_ip}"
 }
 
 output "hostname_list" {

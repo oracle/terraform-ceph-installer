@@ -61,9 +61,14 @@ variable "instance_create_timeout" {
   default = "60m"
 }
 
-variable "scripts_directory" {
-    description = "The path to the scripts and config files directory."
-    default = "modules/scripts"
+variable "scripts_src_directory" {
+    description = "The path to the directory where are scripts and config files are."
+    default = "scripts"
+}
+
+variable "scripts_dst_directory" {
+    description = "The path to the directory where are scripts and config files will be copied."
+    default = "terraform-scripts"
 }
 
 variable "ssh_username" {

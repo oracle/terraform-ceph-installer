@@ -74,8 +74,12 @@ variable "volume_attachment_type" {
   description = "The type of attachment to the instance. Currently, iscsi is the only option"
 }
 
-variable "scripts_directory" {
+variable "scripts_src_directory" {
   description = "Path to the directory where the scripts and config files are"
+}
+
+variable "scripts_dst_directory" {
+  description = "Path to the directory where the scripts and config files will be copied to"
 }
 
 variable "block_device_for_ceph" {

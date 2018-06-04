@@ -36,7 +36,8 @@ module "ceph_deployer" {
   ssh_private_key_file = "${var.ssh_private_key_file}"
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
-  scripts_directory = "${var.scripts_directory}"
+  scripts_src_directory = "${var.scripts_src_directory}"
+  scripts_dst_directory = "${var.scripts_dst_directory}"
 }
 
 #-------------------------------------------------------------------------------------------
@@ -57,7 +58,8 @@ module "ceph_monitors" {
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
-  scripts_directory = "${var.scripts_directory}"
+  scripts_src_directory = "${var.scripts_src_directory}"
+  scripts_dst_directory = "${var.scripts_dst_directory}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
 }
 
@@ -83,14 +85,15 @@ module "ceph_osds" {
   volume_name_prefix = "${var.volume_name_prefix}"
   volume_size_in_gbs = "${var.volume_size_in_gbs}"
   volume_attachment_type = "${var.volume_attachment_type}"
-  scripts_directory = "${var.scripts_directory}"
+  scripts_src_directory = "${var.scripts_src_directory}"
+  scripts_dst_directory = "${var.scripts_dst_directory}"
   block_device_for_ceph = "${var.block_device_for_ceph}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster= "${module.ceph_monitors.new_cluster}"
 }
 
 #-------------------------------------------------------------------------------------------
-# Create and Setup the Ceph MDSs 
+# Create and Setup the Ceph MDSs
 #-------------------------------------------------------------------------------------------
 module "ceph_mds" {
   source = "modules/ceph-mds/"
@@ -107,7 +110,8 @@ module "ceph_mds" {
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
-  scripts_directory = "${var.scripts_directory}"
+  scripts_src_directory = "${var.scripts_src_directory}"
+  scripts_dst_directory = "${var.scripts_dst_directory}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster = "${module.ceph_monitors.new_cluster}"
 }
@@ -130,7 +134,8 @@ module "ceph_client" {
   ssh_username = "${var.ssh_username}"
   instance_create_timeout = "${var.instance_create_timeout}"
   ceph_deployer_ip = "${module.ceph_deployer.ip}"
-  scripts_directory = "${var.scripts_directory}"
+  scripts_src_directory = "${var.scripts_src_directory}"
+  scripts_dst_directory = "${var.scripts_dst_directory}"
   deployer_deploy = "${module.ceph_deployer.deploy}"
   new_cluster = "${module.ceph_monitors.new_cluster}"
   osd_deploy = "${module.ceph_osds.deploy}"

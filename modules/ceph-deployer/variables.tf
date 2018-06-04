@@ -47,6 +47,10 @@ variable "instance_create_timeout" {
   description = "The timeout value for instance creation"
 }
 
-variable "scripts_directory" {
+variable "scripts_src_directory" {
   description = "Path to the directory where the scripts and config files are"
+}
+
+variable "scripts_dst_directory" {
+  description = "Path to the directory where the scripts and config files will be copied to"
 }

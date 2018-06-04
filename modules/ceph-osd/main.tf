@@ -32,27 +32,27 @@ resource "oci_core_instance" "instances" {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/ceph.config"
+    source = "${var.scripts_src_directory}/ceph.config"
     destination = "~/ceph.config"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/vm_setup.sh"
+    source = "${var.scripts_src_directory}/vm_setup.sh"
     destination = "~/vm_setup.sh"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/yum_repo_setup.sh"
+    source = "${var.scripts_src_directory}/yum_repo_setup.sh"
     destination = "~/yum_repo_setup.sh"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/ceph_yum_repo"
+    source = "${var.scripts_src_directory}/ceph_yum_repo"
     destination = "~/ceph_yum_repo"
   }
   provisioner "file" {
-    source = "${var.scripts_directory}/ceph_firewall_setup.sh"
+    source = "${var.scripts_src_directory}/ceph_firewall_setup.sh"
     destination = "~/ceph_firewall_setup.sh"
   }
   connection {
-    host = "${self.public_ip}"
+    host = "${self.private_ip}"
     type = "ssh"
     user = "${var.ssh_username}"
     private_key = "${file(var.ssh_private_key_file)}"
@@ -75,7 +75,7 @@ module "storage" {
   volume_name_prefix = "${var.volume_name_prefix}"
   volume_size_in_gbs = "${var.volume_size_in_gbs}"
   volume_attachment_type = "${var.volume_attachment_type}"
-  host_addresses = "${oci_core_instance.instances.*.public_ip}"
+  host_addresses = "${oci_core_instance.instances.*.private_ip}"
   ssh_private_key = "${file(var.ssh_private_key_file)}"
 }
 
@@ -89,7 +89,7 @@ resource "null_resource" "vm_setup" {
     connection {
       agent = false
       timeout = "30m"
-      host = "${element(oci_core_instance.instances.*.public_ip, count.index)}"
+      host = "${element(oci_core_instance.instances.*.private_ip, count.index)}"
       user = "${var.ssh_username}"
       private_key = "${file(var.ssh_private_key_file)}"
     }
@@ -112,7 +112,7 @@ resource "null_resource" "setup" {
     connection {
       agent = false
       timeout = "30m"
-      host = "${element(oci_core_instance.instances.*.public_ip, count.index)}"
+      host = "${element(oci_core_instance.instances.*.private_ip, count.index)}"
       user = "${var.ssh_username}"
       private_key = "${file(var.ssh_private_key_file)}"
     }
@@ -137,7 +137,7 @@ resource "null_resource" "copy_key" {
   depends_on = ["null_resource.setup", "null_resource.wait_for_deployer_deploy"]
   count = "${var.instance_count}"
   provisioner "local-exec" {
-    command = "${var.scripts_directory}/install_ssh_key.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.public_ip, count.index)}"
+    command = "${var.scripts_src_directory}/install_ssh_key.sh ${var.ceph_deployer_ip} ${element(oci_core_instance.instances.*.private_ip, count.index)}"
   }
 }
 
