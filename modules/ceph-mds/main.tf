@@ -31,31 +31,36 @@ resource "oci_core_instance" "instance" {
   metadata {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph.config"
-    destination = "~/ceph.config"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/vm_setup.sh"
-    destination = "~/vm_setup.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/yum_repo_setup.sh"
-    destination = "~/yum_repo_setup.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_yum_repo"
-    destination = "~/ceph_yum_repo"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_firewall_setup.sh"
-    destination = "~/ceph_firewall_setup.sh"
-  }
   connection {
     host = "${self.private_ip}"
     type = "ssh"
     user = "${var.ssh_username}"
     private_key = "${file(var.ssh_private_key_file)}"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      " mkdir ~/${var.scripts_dst_directory}",
+    ]
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph.config"
+    destination = "~/${var.scripts_dst_directory}/ceph.config"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/yum_repo_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/yum_repo_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_yum_repo"
+    destination = "~/${var.scripts_dst_directory}/ceph_yum_repo"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_firewall_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_firewall_setup.sh"
   }
   timeouts {
     create = "${var.instance_create_timeout}"
@@ -77,10 +82,11 @@ resource "null_resource" "vm_setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "chmod +x ~/vm_setup.sh",
-      "chmod +x ~/yum_repo_setup.sh",
-      "chmod +x ~/ceph_firewall_setup.sh",
-      "~/vm_setup.sh mds"
+      "chmod +x ~/${var.scripts_dst_directory}/vm_setup.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/yum_repo_setup.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_firewall_setup.sh",
+      "cd ${var.scripts_dst_directory}",
+      "./vm_setup.sh mds"
     ]
   }
 }
@@ -100,8 +106,9 @@ resource "null_resource" "setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/yum_repo_setup.sh",
-      "~/ceph_firewall_setup.sh mds"
+      "cd ${var.scripts_dst_directory}",
+      "./yum_repo_setup.sh",
+      "./ceph_firewall_setup.sh mds"
     ]
   }
 }
@@ -138,8 +145,9 @@ resource "null_resource" "add_to_deployer_known_hosts" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/add_to_etc_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}",
-      "~/add_to_known_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}"
+      "cd ${var.scripts_dst_directory}",
+      "./add_to_etc_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}",
+      "./add_to_known_hosts.sh ${oci_core_instance.instance.private_ip} ${oci_core_instance.instance.hostname_label}"
     ]
   }
 }
@@ -166,7 +174,8 @@ resource "null_resource" "deploy" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "~/ceph_deploy_mds.sh ${join(" ", oci_core_instance.instance.*.hostname_label)}"
+      "cd ${var.scripts_dst_directory}",
+      "./ceph_deploy_mds.sh ${join(" ", oci_core_instance.instance.*.hostname_label)}"
      ]
   }
 }

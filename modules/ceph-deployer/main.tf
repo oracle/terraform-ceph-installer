@@ -30,63 +30,68 @@ resource "oci_core_instance" "instance" {
   metadata {
     ssh_authorized_keys = "${file(var.ssh_public_key_file)}"
   }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph.config"
-    destination = "~/ceph.config"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/vm_setup.sh"
-    destination = "~/vm_setup.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/add_to_known_hosts.sh"
-    destination = "~/add_to_known_hosts.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/add_to_etc_hosts.sh"
-    destination = "~/add_to_etc_hosts.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/install_ssh_key.sh"
-    destination = "~/install_ssh_key.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/yum_repo_setup.sh"
-    destination = "~/yum_repo_setup.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_yum_repo"
-    destination = "~/ceph_yum_repo"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_firewall_setup.sh"
-    destination = "~/ceph_firewall_setup.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/install_ceph_deploy.sh"
-    destination = "~/install_ceph_deploy.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_new_cluster.sh"
-    destination = "~/ceph_new_cluster.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_deploy_osd.sh"
-    destination = "~/ceph_deploy_osd.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_deploy_mds.sh"
-    destination = "~/ceph_deploy_mds.sh"
-  }
-  provisioner "file" {
-    source = "${var.scripts_src_directory}/ceph_deploy_client.sh"
-    destination = "~/ceph_deploy_client.sh"
-  }
   connection {
     host = "${self.private_ip}"
     type = "ssh"
     user = "${var.ssh_username}"
     private_key = "${file(var.ssh_private_key_file)}"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      " mkdir ~/${var.scripts_dst_directory}",
+    ]
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph.config"
+    destination = "~/${var.scripts_dst_directory}/ceph.config"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/add_to_known_hosts.sh"
+    destination = "~/${var.scripts_dst_directory}/add_to_known_hosts.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/add_to_etc_hosts.sh"
+    destination = "~/${var.scripts_dst_directory}/add_to_etc_hosts.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/install_ssh_key.sh"
+    destination = "~/${var.scripts_dst_directory}/install_ssh_key.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/yum_repo_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/yum_repo_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_yum_repo"
+    destination = "~/${var.scripts_dst_directory}/ceph_yum_repo"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_firewall_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_firewall_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/install_ceph_deploy.sh"
+    destination = "~/${var.scripts_dst_directory}/install_ceph_deploy.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_new_cluster.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_new_cluster.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_deploy_osd.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_deploy_osd.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_deploy_mds.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_deploy_mds.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/ceph_deploy_client.sh"
+    destination = "~/${var.scripts_dst_directory}/ceph_deploy_client.sh"
   }
   timeouts {
     create = "${var.instance_create_timeout}"
@@ -107,18 +112,19 @@ resource "null_resource" "vm_setup" {
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "chmod +x ~/vm_setup.sh",
-      "chmod +x ~/add_to_etc_hosts.sh",
-      "chmod +x ~/add_to_known_hosts.sh",
-      "chmod +x ~/install_ssh_key.sh",
-      "chmod +x ~/yum_repo_setup.sh",
-      "chmod +x ~/ceph_firewall_setup.sh",
-      "chmod +x ~/install_ceph_deploy.sh",
-      "chmod +x ~/ceph_new_cluster.sh",
-      "chmod +x ~/ceph_deploy_osd.sh",
-      "chmod +x ~/ceph_deploy_mds.sh",
-      "chmod +x ~/ceph_deploy_client.sh",
-      "~/vm_setup.sh deployer"
+      "chmod +x ~/${var.scripts_dst_directory}/vm_setup.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/add_to_etc_hosts.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/add_to_known_hosts.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/install_ssh_key.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/yum_repo_setup.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_firewall_setup.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/install_ceph_deploy.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_new_cluster.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_deploy_osd.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_deploy_mds.sh",
+      "chmod +x ~/${var.scripts_dst_directory}/ceph_deploy_client.sh",
+      "cd ${var.scripts_dst_directory}",
+      "./vm_setup.sh deployer"
     ]
   }
 }
@@ -139,9 +145,10 @@ resource "null_resource" "deploy" {
     inline = [
       "rm -rf ~/.ssh/id_rsa",
       "ssh-keygen -t rsa -q -P '' -f ~/.ssh/id_rsa",
-      "~/yum_repo_setup.sh",
-      "~/ceph_firewall_setup.sh deployer",
-      "~/install_ceph_deploy.sh"
+      "cd ${var.scripts_dst_directory}",
+      "./yum_repo_setup.sh",
+      "./ceph_firewall_setup.sh deployer",
+      "./install_ceph_deploy.sh"
     ]
   }
 }
