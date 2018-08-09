@@ -4,8 +4,8 @@
 # This is part of three setup files that allow for setting up newly
 # created VMs after the VM is create and initialized.
 # The three files are:
-# 1. vm_pre_setup
-# 2. vm_setup (this file), and
+# 1. vm_pre_setup (this file)
+# 2. vm_setup, and
 # 3. vm_post_setup
 # These files can be used, for example, to install packages, update the
 # OS or change the kernel etc.
@@ -18,7 +18,7 @@ if [ -f ceph.config ]; then
   outfile=$(awk -F= '/^outputfile_name/{print $2}' ceph.config)
   if [ "$do_vm_setup" != "yes" ]; then
     echo VM Setup is not done | tee -a $outfile
-    echo Skipping vm setup ... \[ At host: $(hostname) \] $0 $* | tee -a $outfile
+    echo Skipping vm pre setup ... \[ At host: $(hostname) \] $0 $* | tee -a $outfile
     exit
   fi
 fi
@@ -37,4 +37,4 @@ if [ $# -lt 1 ];then
 fi
 
 type=$1
-echo "Executing vm_setup for $type:" $(hostname) | tee -a $outfile
+echo "Executing vm_pre_setup for $type:" $(hostname) | tee -a $outfile

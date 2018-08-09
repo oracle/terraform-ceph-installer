@@ -1,21 +1,8 @@
 
-[ol7_ceph_luminous]
+[my_custom_repo_for_ceph]
 name=Ceph Storage for Oracle Linux Release 3.0 - Oracle Linux 7.5 or later ($basearch)
-baseurl=http://ca-qa-hosting.us.oracle.com/ceph/luminous/OL7/x86_64/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=1
-enabled=1
-
-[ol7_UEK5_REPO]
-name=Kernel UEK5 - Oracle Linux 7.2 or later ()
-baseurl=http://10.211.52.33/kernel/x86_64/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=0
-enabled=1
-
-[ol7_custom]
-name=Ceph Storage for Oracle Linux Release 2.0 - Oracle Linux 7.2 or later ($basearch)
-baseurl=http://yum.oracle.com/repo/OracleLinux/OL7/ceph/$basearch/
+baseurl=http://xyz.myorg.com/ceph/luminous/OL7/x86_64/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
 gpgcheck=1
 enabled=0
+

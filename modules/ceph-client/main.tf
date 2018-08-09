@@ -15,7 +15,7 @@ data "oci_core_images" "image_ocid" {
 }
 
 #------------------------------------------------------------------------------------
-# Create Ceph Client Instances
+# Create Ceph Client Instance(s)
 #------------------------------------------------------------------------------------
 resource "oci_core_instance" "instance" {
   count = "${var.num_client}"
@@ -48,8 +48,20 @@ resource "oci_core_instance" "instance" {
     destination = "~/${var.scripts_dst_directory}/ceph.config"
   }
   provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_init.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_init.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_pre_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_pre_setup.sh"
+  }
+  provisioner "file" {
     source = "${var.scripts_src_directory}/vm_setup.sh"
     destination = "~/${var.scripts_dst_directory}/vm_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_post_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_post_setup.sh"
   }
   provisioner "file" {
     source = "${var.scripts_src_directory}/yum_repo_setup.sh"
@@ -73,26 +85,110 @@ resource "oci_core_instance" "instance" {
 }
 
 #------------------------------------------------------------------------------------
-# Setup Ceph Client Instances
+# Initialize the VM
 #------------------------------------------------------------------------------------
-resource "null_resource" "vm_setup" {
+resource "null_resource" "vm_init" {
   depends_on = ["oci_core_instance.instance"]
   count = "${var.num_client}"
   provisioner "remote-exec" {
     connection {
       agent = false
       timeout = "30m"
-      host = "${oci_core_instance.instance.private_ip}"
+      host = "${element(oci_core_instance.instance.*.private_ip, count.index)}"
       user = "${var.ssh_username}"
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
-      "chmod +x ~/${var.scripts_dst_directory}/vm_setup.sh",
-      "chmod +x ~/${var.scripts_dst_directory}/yum_repo_setup.sh",
-      "chmod +x ~/${var.scripts_dst_directory}/ceph_firewall_setup.sh",
-      "chmod +x ~/${var.scripts_dst_directory}/ceph_client_setup.sh",
       "cd ${var.scripts_dst_directory}",
-      "./vm_setup.sh client",
+      "chmod +x vm_init.sh",
+      "./vm_init.sh client"
+    ]
+  }
+}
+
+#------------------------------------------------------------------------------------
+# Setup the VM.
+# Setup involves:
+# 1. Pre Setup
+# 2. Waiting (adding delay for the duration specified in the ceph.config file)
+# 3. Setup
+# 4. Waiting (adding delay for the duration specified in the ceph.config file)
+# 5. Post Setup
+#------------------------------------------------------------------------------------
+resource "null_resource" "vm_pre_setup" {
+  depends_on = ["null_resource.vm_init"]
+  count = "${var.num_client}"
+  provisioner "remote-exec" {
+    connection {
+      agent = false
+      timeout = "30m"
+      host = "${element(oci_core_instance.instance.*.private_ip, count.index)}"
+      user = "${var.ssh_username}"
+      private_key = "${file(var.ssh_private_key_file)}"
+    }
+    inline = [
+      "cd ${var.scripts_dst_directory}",
+      "chmod +x vm_pre_setup.sh",
+      "./vm_pre_setup.sh client"
+    ]
+  }
+}
+
+resource "null_resource" "delay_before" {
+  count = "${var.num_client}"
+  provisioner "local-exec" {
+    command = "cd ${var.scripts_src_directory}; ./delay.sh before_setup"
+  }
+  triggers = {
+    "before" = "${element(null_resource.vm_pre_setup.*.id, count.index)}"
+
+  }
+}
+
+resource "null_resource" "vm_setup" {
+  depends_on = ["null_resource.delay_before"]
+  count = "${var.num_client}"
+  provisioner "remote-exec" {
+    connection {
+      agent = false
+      timeout = "30m"
+      host = "${element(oci_core_instance.instance.*.private_ip, count.index)}"
+      user = "${var.ssh_username}"
+      private_key = "${file(var.ssh_private_key_file)}"
+    }
+    inline = [
+      "cd ${var.scripts_dst_directory}",
+      "chmod +x vm_setup.sh",
+      "./vm_setup.sh client"
+    ]
+  }
+}
+
+resource "null_resource" "delay_after" {
+  count = "${var.num_client}"
+  provisioner "local-exec" {
+    command = "cd ${var.scripts_src_directory}; ./delay.sh after_setup"
+  }
+  triggers = {
+    "before" = "${element(null_resource.vm_setup.*.id, count.index)}"
+  }
+}
+
+resource "null_resource" "vm_post_setup" {
+  depends_on = ["null_resource.delay_after"]
+  count = "${var.num_client}"
+  provisioner "remote-exec" {
+    connection {
+      agent = false
+      timeout = "30m"
+      host = "${element(oci_core_instance.instance.*.private_ip, count.index)}"
+      user = "${var.ssh_username}"
+      private_key = "${file(var.ssh_private_key_file)}"
+    }
+    inline = [
+      "cd ${var.scripts_dst_directory}",
+      "chmod +x vm_post_setup.sh",
+      "./vm_post_setup.sh client"
     ]
   }
 }
@@ -101,19 +197,21 @@ resource "null_resource" "vm_setup" {
 # Setup Ceph Client Instances
 #------------------------------------------------------------------------------------
 resource "null_resource" "setup" {
-  depends_on = ["null_resource.vm_setup"]
+  depends_on = ["null_resource.vm_post_setup"]
   count = "${var.num_client}"
   provisioner "remote-exec" {
     connection {
       agent = false
       timeout = "30m"
-      host = "${oci_core_instance.instance.private_ip}"
+      host = "${element(oci_core_instance.instance.*.private_ip, count.index)}"
       user = "${var.ssh_username}"
       private_key = "${file(var.ssh_private_key_file)}"
     }
     inline = [
       "cd ${var.scripts_dst_directory}",
+      "chmod +x yum_repo_setup.sh",
       "./yum_repo_setup.sh",
+      "chmod +x ceph_firewall_setup.sh",
       "./ceph_firewall_setup.sh client"
     ]
   }
@@ -182,6 +280,7 @@ resource "null_resource" "deploy" {
     }
     inline = [
       "cd ${var.scripts_dst_directory}",
+      "chmod +x ceph_deploy_client.sh",
       "./ceph_deploy_client.sh ${join(" ", oci_core_instance.instance.*.hostname_label)}"
      ]
   }
@@ -210,6 +309,7 @@ resource "null_resource" "client_setup" {
     }
     inline = [
       "cd ${var.scripts_dst_directory}",
+      "chmod +x ceph_client_setup.sh",
       "./ceph_client_setup.sh ${var.ssh_username}"
     ]
   }

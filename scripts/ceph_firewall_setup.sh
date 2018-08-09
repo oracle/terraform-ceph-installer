@@ -15,8 +15,8 @@ fi
 print_usage()
 {
   echo ""
-  echo "Usage: $0 <osd|monitor>"
-  echo "       <osd|monitor> - whether for osd or monitor"
+  echo "Usage: $0 <type>"
+  echo "       <type> - the type of ceph node: osd, monitor, deploer, mds, or client"
   echo ""
   exit
 }
@@ -93,4 +93,3 @@ fi
 #sudo systemctl restart firewalld.service
 
 echo "Done ....  $0" | tee -a $outfile
-

@@ -97,7 +97,7 @@ module "ceph_osds" {
 #-------------------------------------------------------------------------------------------
 module "ceph_mds" {
   source = "modules/ceph-mds/"
-  num_instances = "${var.mds_instance_count}"
+  instance_count = "${var.mds_instance_count}"
   tenancy_ocid = "${var.tenancy_ocid}"
   compartment_ocid = "${var.compartment_ocid}"
   instance_os = "${var.instance_os}"

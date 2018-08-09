@@ -1,10 +1,10 @@
 
 output "ip_list" {
-  value = "${oci_core_instance.ceph_monitors.*.private_ip}"
+  value = "${oci_core_instance.instance.*.private_ip}"
 }
 
 output "hostname_list" {
-  value = "${oci_core_instance.ceph_monitors.*.hostname_label}"
+  value = "${oci_core_instance.instance.*.hostname_label}"
 }
 
 output "new_cluster" {

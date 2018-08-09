@@ -14,7 +14,7 @@ variable "instance_os" {
   description = "The Name of the Operating System for the instance"
 }
 
-variable "num_instances" {
+variable "instance_count" {
   description = "The number of instances to create"
 }
 

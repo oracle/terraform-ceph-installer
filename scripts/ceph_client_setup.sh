@@ -62,7 +62,7 @@ if [ "$do_client_rbd_setup" == "yes" ]; then
     sudo mkdir $filesystem_mount_point
     sudo mount $device_name $filesystem_mount_point
   else
-    ceph osd crush tunables legacy
+    ceph osd crush tunables optimal
     ceph osd pool create $pool_name $pool_page_num $pool_pgp_num | tee -a $outfile
     ceph osd pool application enable $pool_name rbd
     rbd pool init $pool_name
