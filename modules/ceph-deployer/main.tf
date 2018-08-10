@@ -193,7 +193,7 @@ resource "null_resource" "vm_setup" {
   }
 }
 
-resource "null_resource" "delay_afrer" {
+resource "null_resource" "delay_after" {
   provisioner "local-exec" {
     command = "cd ${var.scripts_src_directory}; ./delay.sh after_setup"
   }

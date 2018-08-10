@@ -140,7 +140,7 @@ resource "null_resource" "delay_before" {
 }
 
 resource "null_resource" "vm_setup" {
-  depends_on = ["null_resource.delay"]
+  depends_on = ["null_resource.delay_before"]
   count = "${var.instance_count}"
   provisioner "remote-exec" {
     connection {

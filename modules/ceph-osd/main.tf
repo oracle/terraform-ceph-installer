@@ -47,16 +47,20 @@ resource "oci_core_instance" "instance" {
     destination = "~/${var.scripts_dst_directory}/ceph.config"
   }
   provisioner "file" {
-    source = "${var.scripts_src_directory}/vm_setup.sh"
-    destination = "~/${var.scripts_dst_directory}/vm_setup.sh"
-  }
-  provisioner "file" {
     source = "${var.scripts_src_directory}/vm_init.sh"
     destination = "~/${var.scripts_dst_directory}/vm_init.sh"
   }
   provisioner "file" {
-    source = "${var.scripts_src_directory}/os_install.sh"
-    destination = "~/${var.scripts_dst_directory}/os_install.sh"
+    source = "${var.scripts_src_directory}/vm_pre_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_pre_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_setup.sh"
+  }
+  provisioner "file" {
+    source = "${var.scripts_src_directory}/vm_post_setup.sh"
+    destination = "~/${var.scripts_dst_directory}/vm_post_setup.sh"
   }
   provisioner "file" {
     source = "${var.scripts_src_directory}/yum_repo_setup.sh"
