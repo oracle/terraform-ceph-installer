@@ -2,6 +2,7 @@
 [oracle linux]: https://www.oracle.com/linux/index.html
 [ceph]: https://ceph.com/
 [ceph rel note]: https://docs.oracle.com/cd/E52668_01/E66514/E66514.pdf
+[ceph 3.0 rel note]: https://blogs.oracle.com/linux/announcing-release-3-of-ceph-storage-for-oracle-linux
 [OCI]: https://cloud.oracle.com/cloud-infrastructure
 [oci provider]: https://github.com/oracle/terraform-provider-oci/releases
 [SSH key pair]: https://docs.us-phoenix-1.oraclecloud.com/Content/GSG/Tasks/creatingkeys.htm
@@ -15,9 +16,11 @@
 
 ## About
 
+The scripts in this repository allows you to streamline and/or replicate your Ceph deployment in Oracle Cloud Infrastructure (OCI).
+
 [Ceph][ceph] is an open source distributed storage system designed for performance, reliability and scalability.
 It provides interfaces for object, block, and file-level storage.
-Ceph is now widely used and fully supported on [Oracle Linux][oracle linux] as described in the [Release Notes for Ceph Storage for Oracle Linux Release 2.0][ceph rel note].
+Ceph is now widely used and fully supported on [Oracle Linux][oracle linux] as described in the [Release 3 of Ceph Storage for Oracle Linux][ceph 3.0 rel note].
 
 [Terraform][terraform] is an Open Source Software (OSS) for building, changing, and versioning Cloud infrastructure safely and efficiently.
 [Terraform Provider for OCI][oci provider] allows one to create the necessary Infrastructure resources and configure them in OCI.
@@ -26,18 +29,16 @@ The Terraform Installer for Ceph provides Terraform scripts for installing Ceph 
 It consists of a set of Terraform scripts and modules, bash scripts, and example configurations that can
 be used to provision and configure the resources needed to run a Ceph Storage Cluster on OCI.
 
-Using the scripts in this repository, you can streamline and/or replicate your Ceph deployment in Oracle Cloud Infrastructure (OCI).
-
 ## Ceph Cluster Configuration Overview
 
-A typical Ceph Cluster includes multiple virtual or bare metal machines, referred to as nodes, serving one (or more) of the following:
+A typical Ceph Cluster includes multiple virtual or bare metal machines, referred to as nodes, serving the role of one (or more) of the following:
 - Deployer - for installing Ceph on all other nodes
-- Monitors - for maintaining the maps of the cluster state and  authentication
-- Managers - for keeping track of the cluster state and exposing the cluster information
-- Object Storage Daemons (OSDs) - for storing and handling data
+- Monitor - for maintaining the maps of the cluster state and  authentication - typically 2 or 3 for high availability
+- Manager - for keeping track of the cluster state and exposing the cluster information
+- Object Storage Daemon (OSDs) - for storing and handling data - typically many of them for redundency
 - Metadata Server (MDS) - for storing metadata on behalf of the Ceph Filesystem
 
-Deploying Ceph includes creating infrastructure resources (e.g., compute, network, storage), setting them up for Ceph installation, installing various packages on all machines,
+Deploying Ceph involves creating infrastructure resources (e.g., compute, network, storage), setting them up for Ceph installation, installing various packages on all machines,
 and finally configuring and deploying the cluster. This requires a fair bit of knowledge about OCI and Ceph. Carrying out the entire process manually is tedious and error prone.
 
 However, by using the sctipts in this repository, you can create the necessary infrastructure resources and deploy a Ceph cluster using those resources.
@@ -107,16 +108,13 @@ you deploy the cluster using those subnets.
 ```
 $ cp variables.ex1 variables.tf
 ```
-Edit (if necessary) the following variables:
-instance_shapes - The shapes for the compute resources. You can use different shapes for the deployer, monitor, osd, and client but can only assign one shape for all monitors or OSDs. Change any shapes if not available in your environment.
-instance_os - The full name of the operating system as displayed when you list them. You will probably need to update it as the OS version is updated frequently in OCI. Follow the same format included as example.
-existing_vcn_id - The ocid for the existing VCN. You can find it by login into you tenant using a browser.
-existing_subnet_ids - The list of ocids for the existing subnets. You can find them by login into you tenant using a browser.
-
-Create a link for the network module
-```
-ln -s network.partial modules/network
-```
+You will definitely need to edit the following variables: 
+- existing_vcn_id - The ocid for the existing VCN. You can find it by login into you tenant using a browser.
+- existing_subnet_ids - The list of ocids for the existing subnets. You can find them by login into you tenant using a browser.
+You may also need to edit the following variables: 
+- instance_os - The full name of the operating system that you want on all nodes. You can find it by login into you tenant using a browser. Use the latest availble one. Follow the same format included in the example.
+- instance_shapes - The shapes for the compute resources. Default is VM.Standard1.2 for all nodes. You can use different shapes for differnt types of nodes, i.e., deployer, monitor, osd, mds, and client.
+- create_volume - The default is true which means it will create a block storage for each OSD. If you choose a shape with NVMe drives for OSDs, change it to false.
 
 ### Execute Scripts
 ```
@@ -142,6 +140,12 @@ ceph_client_ip = [
 ]
 ceph_deployer_hostname = test-ceph-deployer
 ceph_deployer_ip = 100.100.45.30
+ceph_mds_hostname_list = [
+    test-ceph-mds-0
+]
+ceph_mds_ip_list = [
+    100.100.45.49
+]
 ceph_monitor_hostname_list = [
     test-ceph-monitor-0,
     test-ceph-monitor-1
@@ -153,14 +157,17 @@ ceph_monitor_ip_list = [
 ceph_osd_hostname_list = [
     test-ceph-osd-0,
     test-ceph-osd-1,
-    test-ceph-osd-2
+    test-ceph-osd-2,
+    test-ceph-osd-3
 ]
 ceph_osd_ip_list = [
+    100.100.45.33,
     100.100.45.32,
     100.100.46.31,
     100.100.48.30
 ]
 ```
+
 
 If you need to list the IP addresses again in the future, enter:
 ```
@@ -177,6 +184,9 @@ $ df -h
 ```
 
 ## Known issues and limitations
-* Terraform doesn't check for any inconsistencies among various input variables. For example, it will fail if the specified subnet id for a compute node doesn't belong to the specified availability domain for the same node. It is your responsibility to make sure the inputs are consistent with one another.
-* Use all lowercase for names of resources. Names with uppercase letters on network resources may cause problems.
+* The scripts doesn't check for the validity of the input variables or any inconsistencies among them.
+Terraform will execute but fail if the compute shape or image doesn't exist in your environment or
+the specified subnet id for a compute node doesn't belong to the specified availability domain for the same node.
+It is your responsibility to make sure the inputs are valid and consistent with one another.
+* Uppercase letters on network resource names may cause problems.
 

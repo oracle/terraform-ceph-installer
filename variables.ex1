@@ -41,6 +41,7 @@ variable "instance_shapes" {
     "deployer" = "VM.Standard1.2"
     "monitor" = "VM.Standard1.2"
     "osd" = "VM.Standard1.2"
+    "mds" = "VM.Standard1.2"
     "client" = "VM.Standard1.2"
   }
 }
@@ -53,7 +54,7 @@ variable "create_volume" {
 # Note: Specifiy the full display name of the OS. Just the name (e.g., Linux) and version (e.g., 7.4) doesn't guarantee a particular image that will be compatible with the instance
 variable "instance_os" {
   description = "The Name of the Operating System for all instances"
-  default = "Oracle-Linux-7.4-2018.02.21-1"
+  default = "Oracle-Linux-7.5-2018.07.20-0"
 }
 
 variable "instance_create_timeout" {
@@ -177,7 +178,7 @@ variable "monitor_hostname_prefix" {
 #---------------------------------------------------------------
 variable "osd_instance_count" {
   description = "The Number of OSDs to create"
-  default = "3"
+  default = "4"
 }
 
 variable "availability_domain_index_list_for_osds" {
@@ -220,7 +221,7 @@ variable "mds_instance_count" {
 
 variable "availability_domain_index_list_for_mds" {
   description = "The availability domain where the client will be created"
-  default = [ "1", "2", "3" ]
+  default = [ "2", "3", "1" ]
 }
 
 variable "mds_hostname_prefix" {
